@@ -1,0 +1,2747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COSMOS // MISSION CONTROL</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;900&family=Rajdhani:wght@300;400;600&display=swap');
+:root{--void:#020408;--deep:#040c14;--panel:#060e18;--border:#0a2040;--border2:#0d3060;--accent:#00d4ff;--accent2:#0088cc;--green:#00ff88;--green2:#00cc6a;--amber:#ffaa00;--red:#ff3333;--dim:#6a94b8;--text:#a0c8e0;--textbr:#c8e4f0;--white:#e8f4fc;--ltblue:#7ec8ff;--mono:'Share Tech Mono',monospace;--display:'Orbitron',monospace;--body:'Rajdhani',sans-serif;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:22px;}
+html,body{width:100%;min-height:100vh;background:var(--void);color:var(--text);font-family:var(--body);overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,0.012) 2px,rgba(0,212,255,0.012) 4px);pointer-events:none;z-index:1000;}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.masthead{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border:1px solid var(--border2);background:var(--panel);position:relative;overflow:hidden;}
+.masthead::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--green),var(--accent),transparent);animation:scanh 4s linear infinite;}
+@keyframes scanh{0%,100%{opacity:1}50%{opacity:0.3}}
+.logo{font-family:var(--display);font-size:1.3rem;font-weight:900;letter-spacing:0.15em;color:var(--white);text-shadow:0 0 20px rgba(0,212,255,0.5);}
+.logo span{color:var(--accent);}
+.mission-id{font-family:var(--mono);font-size:0.6rem;color:var(--dim);letter-spacing:0.1em;line-height:1.7;margin-left:20px;}
+.mhd-l{display:flex;align-items:center;}
+.mhd-r{display:flex;align-items:center;gap:24px;}
+.sys-status{display:flex;flex-direction:column;gap:4px;}
+.srow{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:0.55rem;color:var(--dim);letter-spacing:0.08em;}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite;}
+.sdot.a{background:var(--amber);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.clock-big{font-family:var(--display);font-size:1.05rem;font-weight:600;color:var(--accent);letter-spacing:0.1em;text-shadow:0 0 10px rgba(0,212,255,0.4);}
+.clock-date{font-family:var(--mono);font-size:0.55rem;color:var(--dim);letter-spacing:0.08em;text-align:right;margin-top:2px;}
+/* grid replaced by tabs */
+.panel{background:var(--panel);border:1px solid var(--border);position:relative;overflow:hidden;}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--accent);opacity:0.35;}
+.map-panel{display:flex;flex-direction:column;}
+.map-canvas-wrap{flex:1;min-height:280px;}
+a.ptitle{text-decoration:none;cursor:pointer;}
+a.ptitle:hover{text-decoration:underline;}
+.voyager-link{display:block;text-decoration:none;color:inherit;cursor:pointer;padding:4px 6px;margin:-4px -6px 6px;border-radius:2px;transition:background 0.15s;}
+.voyager-link:hover{background:rgba(0,136,204,0.12);}
+.sky-event-card{display:block;background:rgba(0,12,24,0.6);border:1px solid var(--border);padding:10px 12px;text-decoration:none;color:inherit;cursor:pointer;transition:background 0.15s,border-color 0.15s;}
+.sky-event-card:hover{background:rgba(0,136,204,0.14);border-color:var(--accent2);}
+.phdr{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-bottom:1px solid var(--border);background:rgba(0,20,40,0.5);}
+.ptitle{font-family:var(--display);font-size:0.55rem;font-weight:600;letter-spacing:0.15em;color:var(--accent);}
+.ptag{font-family:var(--mono);font-size:0.5rem;color:var(--dim);letter-spacing:0.1em;}
+.pbody{padding:12px;}
+.apod-img-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#020810;overflow:hidden;}
+.apod-img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity 1.2s ease;}
+.apod-img.loaded{opacity:1;}
+.apod-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(4,12,20,0.95) 0%,transparent 55%);}
+.apod-c{position:absolute;width:14px;height:14px;border-color:var(--accent);border-style:solid;opacity:0.5;}
+.apod-c.tl{top:8px;left:8px;border-width:2px 0 0 2px;}.apod-c.tr{top:8px;right:8px;border-width:2px 2px 0 0;}
+.apod-c.bl{bottom:8px;left:8px;border-width:0 0 2px 2px;}.apod-c.br{bottom:8px;right:8px;border-width:0 2px 2px 0;}
+.apod-meta{position:absolute;bottom:0;left:0;right:0;padding:12px;}
+.apod-dtag{font-family:var(--mono);font-size:0.5rem;color:var(--accent);letter-spacing:0.12em;margin-bottom:3px;}
+.apod-ttl{font-family:var(--display);font-size:0.8rem;font-weight:600;color:var(--white);letter-spacing:0.05em;line-height:1.3;text-shadow:0 0 20px rgba(0,0,0,0.8);}
+.apod-desc{padding:12px;font-size:0.78rem;font-weight:300;color:var(--text);line-height:1.7;border-top:1px solid var(--border);max-height:110px;overflow-y:auto;scrollbar-width:thin;}
+.iss-coords{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px;}
+.cbox{background:rgba(0,20,40,0.5);border:1px solid var(--border);padding:7px 9px;}
+.clbl{font-family:var(--mono);font-size:0.48rem;color:var(--dim);letter-spacing:0.12em;margin-bottom:1px;}
+.cval{font-family:var(--display);font-size:0.8rem;font-weight:600;color:var(--green);letter-spacing:0.03em;}
+.irow{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(10,32,64,0.5);}
+.irow:last-child{border-bottom:none;}
+.ilbl{color:var(--dim);font-family:var(--mono);font-size:0.53rem;letter-spacing:0.08em;}
+.ival{color:var(--textbr);font-family:var(--mono);font-size:0.6rem;}
+.rbtn,.loc-btn{width:100%;margin-top:9px;padding:5px;background:none;border:1px solid var(--border2);color:var(--accent2);font-family:var(--mono);font-size:0.52rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;}
+.rbtn:hover,.loc-btn:hover{background:rgba(0,136,204,0.15);border-color:var(--accent);color:var(--accent);}
+/* PASS PREDICTION */
+.pass-section{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.pass-hdr{font-family:var(--mono);font-size:0.5rem;color:var(--dim);letter-spacing:0.12em;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;}
+.pass-loc{font-family:var(--mono);font-size:0.52rem;color:var(--accent2);}
+.pass-countdown{font-family:var(--display);font-size:0.88rem;font-weight:600;color:var(--accent);letter-spacing:0.05em;text-align:center;padding:5px 0;text-shadow:0 0 10px rgba(0,212,255,0.4);}
+.pass-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(10,32,64,0.4);}
+.pass-row:last-child{border-bottom:none;}
+.pass-lbl{font-family:var(--mono);font-size:0.5rem;color:var(--dim);letter-spacing:0.08em;}
+.pass-val{font-family:var(--mono);font-size:0.58rem;color:var(--textbr);}
+.pass-elev-bar{width:100%;height:3px;background:var(--border);margin-top:3px;border-radius:1px;overflow:hidden;}
+.pass-elev-fill{height:100%;border-radius:1px;transition:width 0.5s ease;}
+.elev-great{background:var(--green);}.elev-good{background:var(--amber);}.elev-poor{background:var(--red);}
+/* ALERT */
+.pass-alert{display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2000;background:#000c18;border:2px solid var(--green);padding:14px 24px;text-align:center;box-shadow:0 0 30px rgba(0,255,136,0.25);animation:alp 2s ease-in-out infinite;min-width:320px;}
+.pass-alert.visible{display:block;}
+@keyframes alp{0%,100%{box-shadow:0 0 20px rgba(0,255,136,0.2)}50%{box-shadow:0 0 40px rgba(0,255,136,0.5)}}
+.alert-title{font-family:var(--display);font-size:0.7rem;font-weight:900;color:var(--green);letter-spacing:0.15em;margin-bottom:4px;}
+.alert-body{font-family:var(--mono);font-size:0.55rem;color:var(--textbr);letter-spacing:0.08em;line-height:1.8;}
+.alert-close{position:absolute;top:6px;right:10px;background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:0.6rem;cursor:pointer;}
+.alert-close:hover{color:var(--textbr);}
+/* CREW */
+.crew-hdr{font-family:var(--mono);font-size:0.55rem;color:var(--dim);letter-spacing:0.1em;margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.crew-hdr span{color:var(--green);font-size:0.68rem;}
+.ci{display:flex;align-items:center;gap:9px;padding:5px 6px;border-bottom:1px solid rgba(10,32,64,0.4);text-decoration:none;color:inherit;cursor:pointer;transition:background 0.15s;border-radius:2px;}
+.ci:last-child{border-bottom:none;}
+.ci:hover{background:rgba(0,136,204,0.12);}
+.ci:hover .cn{color:var(--accent);}
+.cav{width:26px;height:26px;border:1px solid var(--border2);background:rgba(0,20,40,0.8);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:0.45rem;font-weight:600;color:var(--accent);flex-shrink:0;}
+.cn{font-size:0.68rem;font-weight:600;color:var(--textbr);}
+.cc{font-family:var(--mono);font-size:0.5rem;color:var(--amber);margin-top:1px;}
+.litem{display:block;padding:9px 6px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;cursor:pointer;transition:background 0.15s;border-radius:2px;}
+.litem:hover{background:rgba(0,136,204,0.1);}
+.litem:last-child{border-bottom:none;}
+.lname{font-family:var(--display);font-size:0.6rem;font-weight:600;color:var(--white);letter-spacing:0.05em;margin-bottom:3px;}
+.ltag{font-family:var(--mono);font-size:0.48rem;letter-spacing:0.08em;padding:2px 5px;border:1px solid;}
+.ltag.s{color:var(--green2);border-color:var(--green2);background:rgba(0,255,136,0.05);}
+.ltag.u{color:var(--amber);border-color:var(--amber);background:rgba(255,170,0,0.05);}
+.ltag.f{color:var(--red);border-color:var(--red);background:rgba(255,51,51,0.05);}
+.ldate{font-family:var(--mono);font-size:0.5rem;color:var(--dim);margin-top:3px;}
+.nitem{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);}
+.nitem:last-child{border-bottom:none;}
+.nname{color:var(--textbr);font-weight:600;font-size:0.62rem;}
+.ndist{font-family:var(--mono);font-size:0.5rem;color:var(--dim);}
+.nsize{font-family:var(--mono);font-size:0.5rem;}
+.nhaz{color:var(--red);}.nsafe{color:var(--green2);}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:7px;}
+.ptile{display:block;background:rgba(0,12,24,0.6);border:1px solid var(--border);padding:9px 7px;text-align:center;transition:border-color 0.2s,background 0.2s;text-decoration:none;color:inherit;cursor:pointer;}
+.ptile:hover{border-color:var(--accent2);background:rgba(0,30,60,0.35);}
+.pico{font-size:1.3rem;margin-bottom:4px;}
+.pname{font-family:var(--display);font-size:0.44rem;font-weight:600;color:var(--accent);letter-spacing:0.1em;margin-bottom:5px;}
+.pstat{font-family:var(--mono);font-size:0.44rem;color:var(--dim);line-height:1.75;}
+.pstat b{color:var(--textbr);font-weight:400;}
+.feedline{display:flex;align-items:baseline;gap:7px;padding:3px 0;border-bottom:1px solid rgba(10,32,64,0.35);animation:fdin 0.3s ease both;}
+@keyframes fdin{from{opacity:0;transform:translateX(-3px)}to{opacity:1;transform:none}}
+.ftime{font-family:var(--mono);font-size:0.5rem;color:var(--dim);flex-shrink:0;}
+.ftxt{font-size:0.65rem;color:var(--text);}
+.ftxt.ok{color:var(--green2);}.ftxt.warn{color:var(--amber);}.ftxt.info{color:var(--accent);}
+.ls{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;gap:7px;}
+.lbar{width:110px;height:2px;background:var(--border);overflow:hidden;}
+.lbar-i{height:100%;background:var(--accent);animation:lda 1.4s ease-in-out infinite;}
+@keyframes lda{0%{width:0;margin-left:0}50%{width:70px;margin-left:20px}100%{width:0;margin-left:110px}}
+.ltxt{font-family:var(--mono);font-size:0.52rem;color:var(--dim);letter-spacing:0.1em;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--border2);}
+
+.map-view-btn {
+  font-family: var(--mono);
+  font-size: 0.48rem;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.map-view-btn:hover { color: var(--text); border-color: var(--accent2); }
+.map-view-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(0,212,255,0.08); }
+
+/* ── TAB NAVIGATION ── */
+.tabs-bar {
+  display: flex;
+  gap: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  padding: 8px 10px;
+  flex-shrink: 0;
+}
+.ctab {
+  font-family: var(--display);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 10px 20px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.ctab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.15s;
+}
+.ctab:hover { color: var(--text); border-color: var(--border2); }
+.ctab.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(0,212,255,0.05);
+}
+.ctab.active::after { transform: scaleX(1); }
+
+.ctab-content { display: none; }
+.ctab-content.active { display: block; }
+
+/* AURORA */
+.aurora-meter {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 4px 0 2px;
+}
+.aurora-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+.aurora-label {
+  font-family: var(--mono);
+  font-size: 0.48rem;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+.aurora-pct {
+  font-family: var(--display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.aurora-verdict {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  margin-top: 3px;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2/astronomy.browser.js" integrity="sha384-8ZtvxSWrcExBIQVI/FK8cbKrj4xgCG+/UH7Txsc0fexUjz4kdbZrZ23ireIifgFy" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/satellite.js@5/dist/satellite.min.js" integrity="sha384-e6V1JVpc+kVNTxT0gEOla7yL4c92Romsw7itPoipfzHbEjzUwPhTv6oeVDMHHzqT" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div class="pass-alert" id="pass-alert">
+  <button class="alert-close" onclick="document.getElementById('pass-alert').classList.remove('visible')">✕</button>
+  <div class="alert-title">🛰 ISS VISIBLE PASS IMMINENT</div>
+  <div class="alert-body" id="alert-body">LOADING...</div>
+</div>
+
+<div class="wrap">
+  <div class="masthead">
+    <div class="mhd-l">
+      <div class="logo"><span>COSMOS</span> // CONTROL</div>
+      <div class="mission-id">COSMOS DASHBOARD v2.0 · OPEN DATA FEEDS<br><span id="sys-status-line">INITIALIZING... · UTC SYNCHRONIZED</span></div>
+    </div>
+    <div class="mhd-r">
+      <div class="sys-status">
+        <div class="srow"><div class="sdot" id="dot-iss"></div><span id="lbl-iss">ISS CONNECTING...</span></div>
+        <div class="srow"><div class="sdot" id="dot-wx"></div><span id="lbl-wx">SPACE WEATHER...</span></div>
+        <div class="srow"><div class="sdot a" id="dot-launch"></div><span id="lbl-launch">LAUNCH LIBRARY...</span></div>
+      </div>
+      <div>
+        <div class="clock-big" id="clk">--:--:-- UTC</div>
+        <div class="clock-date" id="cdt">--- -- ----</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TABS ══ -->
+  <div class="tabs-bar">
+    <button class="ctab active" onclick="switchTab('orbital',this)">🛰 ORBITAL</button>
+    <button class="ctab" onclick="switchTab('solar',this)">☀️ SOLAR</button>
+    <button class="ctab" onclick="switchTab('launches',this)">🚀 LAUNCHES</button>
+    <button class="ctab" onclick="switchTab('sky',this)">✨ SKY EVENTS</button>
+    <button class="ctab" onclick="switchTab('deepspace',this)">🔭 DEEP SPACE</button>
+    <button class="ctab" onclick="switchTab('log',this)">📡 LOG</button>
+  </div>
+
+  <!-- ══ TAB: ORBITAL ══ -->
+  <div class="ctab-content active" id="tab-orbital">
+    <!-- Top row: telemetry 1/4 + map 3/4 -->
+    <div style="display:grid;grid-template-columns:1fr 3fr;gap:10px;margin-bottom:10px;">
+      <div class="panel">
+        <div class="phdr"><div class="ptitle">ISS TELEMETRY</div><div class="ptag" id="iss-tag">LIVE · AUTO 10S</div></div>
+        <div class="pbody" id="iss-body"><div class="ls"><div class="lbar"><div class="lbar-i"></div></div><div class="ltxt">ACQUIRING SIGNAL...</div></div></div>
+      </div>
+      <div class="panel map-panel">
+        <div class="phdr">
+          <div class="ptitle">ISS GROUND TRACK — LIVE</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="ptag" id="map-tag">UPDATING...</div>
+            <div style="display:flex;gap:2px;">
+              <button class="map-view-btn active" id="btn-view-2d" onclick="setMapView('2d')">2D MAP</button>
+              <button class="map-view-btn" id="btn-view-web" onclick="setMapView('web')">ORBIT WEB</button>
+              <button class="map-view-btn" id="btn-view-3d" onclick="setMapView('3d')">3D GLOBE</button>
+              <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></div>
+              <button class="map-view-btn" id="btn-eonet" onclick="toggleEONET(this)" title="Show natural events">🌍 EVENTS</button>
+            </div>
+          </div>
+        </div>
+        <div class="map-canvas-wrap" style="position:relative;">
+          <canvas id="iss-map" width="1400" height="420" style="width:100%;height:100%;display:block;background:#020810;"></canvas>
+          <div id="map-tooltip" style="display:none;position:absolute;pointer-events:none;background:rgba(2,8,16,0.95);border:1px solid var(--accent);padding:8px 12px;font-family:var(--mono);z-index:100;max-width:220px;">
+            <div id="tt-icon" style="font-size:1.2rem;margin-bottom:4px"></div>
+            <div id="tt-title" style="font-size:0.6rem;color:var(--white);letter-spacing:0.06em;margin-bottom:3px"></div>
+            <div id="tt-cat" style="font-size:0.52rem;color:var(--accent);letter-spacing:0.08em;margin-bottom:3px"></div>
+            <div id="tt-date" style="font-size:0.48rem;color:var(--dim);letter-spacing:0.06em"></div>
+          </div>
+          <div id="globe-container" style="display:none;position:absolute;inset:0;width:100%;height:100%;background:#020810;"></div>
+          <div id="map-legend" style="position:absolute;bottom:8px;left:10px;display:flex;gap:14px;font-family:var(--mono);font-size:0.5rem;color:var(--text);letter-spacing:0.08em;">
+            <span><span style="color:var(--green)">●</span> ISS</span>
+            <span><span style="color:var(--accent)">●</span> YOU</span>
+            <span style="color:var(--dim)">○ VISIBILITY FOOTPRINT (~2200KM)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Crew full width below -->
+    <div class="panel">
+      <div class="phdr"><div class="ptitle">CREW IN SPACE</div><div class="ptag" id="crew-tag">-- PERSONNEL</div></div>
+      <div class="pbody" id="crew-body" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;"><div class="ls"><div class="lbar"><div class="lbar-i"></div></div><div class="ltxt">LOCATING CREW...</div></div></div>
+    </div>
+    <div class="panel" style="margin-top:10px">
+      <div class="phdr">
+        <div class="ptitle">EARTH FROM THE ISS</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="ptag" id="earth-photo-tag">NASA · CREW EARTH OBSERVATION</div>
+          <div style="display:flex;gap:2px;">
+            <button class="map-view-btn" onclick="prevEarthPhoto()">◂ PREV</button>
+            <button class="map-view-btn" onclick="nextEarthPhoto()">NEXT ▸</button>
+          </div>
+        </div>
+      </div>
+      <div class="apod-img-wrap" id="earth-photo-wrap">
+        <img class="apod-img" id="earth-photo-img" alt="">
+        <div class="apod-c tl"></div><div class="apod-c tr"></div><div class="apod-c bl"></div><div class="apod-c br"></div>
+        <div class="apod-ov"></div>
+        <div class="apod-meta">
+          <div class="apod-dtag" id="earth-photo-date">LOADING...</div>
+          <div class="apod-ttl" id="earth-photo-title">ACQUIRING RECENT CREW PHOTOGRAPHY...</div>
+        </div>
+      </div>
+      <div class="apod-desc" id="earth-photo-desc"></div>
+      <div style="padding:6px 12px;font-family:var(--mono);font-size:0.44rem;color:var(--dim);letter-spacing:0.06em;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <span id="earth-photo-counter">—</span>
+        <a id="earth-photo-link" href="https://images.nasa.gov" target="_blank" rel="noopener noreferrer" style="color:var(--accent2);white-space:nowrap;">VIEW FULL RES ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: SOLAR ══ -->
+  <div class="ctab-content" id="tab-solar">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div class="panel">
+        <div class="phdr"><div class="ptitle">SPACE WEATHER</div><div class="ptag">NOAA · REAL TIME</div></div>
+        <div class="pbody" id="neo-body"><div class="ls"><div class="lbar"><div class="lbar-i"></div></div><div class="ltxt">CONTACTING NOAA...</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="phdr"><div class="ptitle">AURORA FORECAST</div><div class="ptag" id="aurora-tag">NOAA OVATION</div></div>
+        <div class="pbody" id="aurora-body"><div class="ls"><div class="lbar"><div class="lbar-i"></div></div><div class="ltxt">LOADING AURORA DATA...</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="phdr"><div class="ptitle">SOLAR FLARE ACTIVITY</div><div class="ptag">GOES · NOAA XRAY</div></div>
+        <div class="pbody" id="flare-body"><div class="ls"><div class="lbar"><div class="lbar-i"></div></div><div class="ltxt">READING XRAY FLUX...</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: LAUNCHES ══ -->
+  <div class="ctab-content" id="tab-launches">
+    <div class="panel">
+      <div class="phdr"><div class="ptitle">UPCOMING LAUNCHES</div><div class="ptag">ALL AGENCIES · SPACE DEVS</div></div>
+      <div class="pbody" id="sx-body"><div class="ls"><div class="lbar"><div class="lbar-i"></div></div><div class="ltxt">LOADING MANIFEST...</div></div></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: SKY EVENTS ══ -->
+  <div class="ctab-content" id="tab-sky">
+    <div class="panel">
+      <div class="phdr"><div class="ptitle">SKY EVENTS — TONIGHT &amp; UPCOMING</div><div class="ptag" id="sky-tag">ASTRONOMY ENGINE · JPL DE430</div></div>
+      <div class="pbody" id="sky-body"><div class="ls"><div class="lbar"><div class="lbar-i"></div></div><div class="ltxt">COMPUTING CELESTIAL MECHANICS...</div></div></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: DEEP SPACE ══ -->
+  <div class="ctab-content" id="tab-deepspace">
+    <!-- Planets full width -->
+    <div class="panel" style="margin-bottom:10px">
+      <div class="phdr"><div class="ptitle">SOLAR SYSTEM — PLANETARY DATA</div><div class="ptag">CALCULATED</div></div>
+      <div class="pbody" id="planets-body"><div class="ls"><div class="lbar"><div class="lbar-i"></div></div><div class="ltxt">COMPUTING ORBITAL MECHANICS...</div></div></div>
+    </div>
+    <!-- Moon / Voyager / Debris -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div class="panel">
+        <div class="phdr"><a class="ptitle" href="https://solarsystem.nasa.gov/moons/earths-moon/overview/" target="_blank" rel="noopener noreferrer">LUNAR PHASE</a><div class="ptag">CALCULATED</div></div>
+        <div class="pbody">
+          <div style="display:flex;align-items:center;gap:18px;padding:8px 0;">
+            <canvas id="moon-canvas" width="90" height="90"></canvas>
+            <div>
+              <div style="font-family:var(--display);font-size:0.85rem;font-weight:600;color:var(--white);margin-bottom:6px" id="moon-name">—</div>
+              <div style="font-family:var(--mono);font-size:0.55rem;color:var(--dim);margin-bottom:3px" id="moon-illum">—</div>
+              <div style="font-family:var(--mono);font-size:0.55rem;color:var(--dim)" id="moon-age">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="phdr"><div class="ptitle">VOYAGER TELEMETRY</div><div class="ptag">NASA JPL · EXTRAPOLATED</div></div>
+        <div class="pbody" id="voyager-body"><div class="ls"><div class="lbar"><div class="lbar-i"></div></div><div class="ltxt">CALCULATING...</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="phdr"><a class="ptitle" href="https://orbitaldebris.jsc.nasa.gov/" target="_blank" rel="noopener noreferrer">ORBITAL DEBRIS</a><div class="ptag">ESA 2024</div></div>
+        <div class="pbody" id="debris-body"><div class="ls"><div class="lbar"><div class="lbar-i"></div></div><div class="ltxt">LOADING...</div></div></div>
+      </div>
+    </div>
+    <!-- Gravity weight calculator -->
+    <div class="panel" style="margin-top:10px">
+      <div class="phdr"><div class="ptitle">GRAVITY WEIGHT CALCULATOR</div><div class="ptag">YOUR WEIGHT ON OTHER WORLDS</div></div>
+      <div class="pbody">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <label for="weight-input" style="font-family:var(--mono);font-size:0.55rem;color:var(--dim);letter-spacing:0.08em;">YOUR WEIGHT</label>
+          <input type="number" id="weight-input" min="0" step="0.1" placeholder="e.g. 150" oninput="updateGravityCalc()"
+            style="width:110px;background:rgba(0,20,40,0.6);border:1px solid var(--border2);color:var(--textbr);font-family:var(--mono);font-size:0.65rem;padding:6px 8px;letter-spacing:0.05em;">
+          <div style="display:flex;gap:2px;">
+            <button class="map-view-btn active" id="btn-unit-lbs" onclick="setWeightUnit('lbs')">LBS</button>
+            <button class="map-view-btn" id="btn-unit-kg" onclick="setWeightUnit('kg')">KG</button>
+          </div>
+        </div>
+        <div class="pgrid" id="gravity-results"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: LOG ══ -->
+  <div class="ctab-content" id="tab-log">
+    <div class="panel">
+      <div class="phdr"><div class="ptitle">SYSTEM LOG</div><div class="ptag">LIVE FEED</div></div>
+      <div class="pbody" style="min-height:400px"><div id="sys-feed"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+const feed = document.getElementById('sys-feed');
+function sysLog(msg, type='info') {
+  const n = new Date();
+  const t = [n.getUTCHours(),n.getUTCMinutes(),n.getUTCSeconds()].map(x=>String(x).padStart(2,'0')).join(':');
+  const el = document.createElement('div');
+  el.className = 'feedline';
+  el.innerHTML = `<span class="ftime">${t}Z</span><span class="ftxt ${type}">${msg}</span>`;
+  feed.insertBefore(el, feed.firstChild);
+  while(feed.children.length > 14) feed.removeChild(feed.lastChild);
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.ctab-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  // Redraw ISS map when switching to orbital tab (canvas needs repaint)
+  if (name === 'orbital') {
+    resizeMapCanvas();
+    const latest = issTrack.length ? issTrack[issTrack.length-1] : null;
+    if (latest) updateMap(latest.lat, latest.lon);
+    else drawMap(null, null);
+  }
+}
+
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clk').textContent = [n.getUTCHours(),n.getUTCMinutes(),n.getUTCSeconds()].map(x=>String(x).padStart(2,'0')).join(':') + ' UTC';
+  document.getElementById('cdt').textContent = n.toUTCString().split(' ').slice(1,5).join(' ').toUpperCase();
+}
+setInterval(updateClock,1000); updateClock();
+
+// ── ISS WORLD MAP ─────────────────────────────────────
+let issTrack = []; // store recent positions for ground track
+let mapImg = null;
+
+// Load a simple world map from a public tileset-free source
+function initMap() {
+  const canvas = document.getElementById('iss-map');
+  if (!canvas) return;
+  drawMap(null, null);
+  // Load real world geography then redraw
+  loadGeoJSON().then(() => drawMap(null, null));
+  initMapResize();
+}
+
+// Keep the canvas's actual drawing resolution in sync with its rendered size.
+// The map panel is grid-stretched to match the taller telemetry panel next to it,
+// so a fixed-resolution canvas would leave blank space below it — this makes the
+// canvas (and 3D globe) fill whatever height they're actually given.
+function resizeMapCanvas() {
+  const canvas = document.getElementById('iss-map');
+  const wrap   = document.querySelector('.map-canvas-wrap');
+  if (!canvas || !wrap) return;
+  const w = Math.round(wrap.clientWidth);
+  const h = Math.round(wrap.clientHeight);
+  if (w < 10 || h < 10 || (canvas.width === w && canvas.height === h)) return;
+  canvas.width  = w;
+  canvas.height = h;
+  redrawCurrentMap();
+  onGlobeResize();
+}
+
+function initMapResize() {
+  const wrap = document.querySelector('.map-canvas-wrap');
+  if (!wrap) return;
+  resizeMapCanvas();
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(resizeMapCanvas).observe(wrap);
+  } else {
+    window.addEventListener('resize', resizeMapCanvas);
+  }
+}
+
+function latLonToXY(lat, lon, W, H) {
+  // Simple equirectangular projection
+  const x = ((lon + 180) / 360) * W;
+  const y = ((90 - lat) / 180) * H;
+  return { x, y };
+}
+
+function drawMap(issLat, issLon) {
+  const canvas = document.getElementById('iss-map');
+  if (!canvas) return;
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+
+  // ── Background ──
+  ctx.fillStyle = '#020810';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Ocean fill ──
+  ctx.fillStyle = '#030d1e';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Grid lines ──
+  ctx.strokeStyle = 'rgba(0,212,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let lat = -90; lat <= 90; lat += 30) {
+    const { y } = latLonToXY(lat, 0, W, H);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  for (let lon = -180; lon <= 180; lon += 30) {
+    const { x } = latLonToXY(0, lon, W, H);
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+
+  // ── Equator ──
+  ctx.strokeStyle = 'rgba(0,212,255,0.15)';
+  ctx.lineWidth = 1;
+  const eq = latLonToXY(0, 0, W, H);
+  ctx.beginPath(); ctx.moveTo(0, eq.y); ctx.lineTo(W, eq.y); ctx.stroke();
+
+  // ── ISS orbital inclination band (51.6°) ──
+  ctx.fillStyle = 'rgba(0,212,255,0.03)';
+  const topY  = latLonToXY(51.6, 0, W, H).y;
+  const botY  = latLonToXY(-51.6, 0, W, H).y;
+  ctx.fillRect(0, topY, W, botY - topY);
+
+  // ── Draw world map using Path2D continent outlines (simplified) ──
+  drawContinents(ctx, W, H);
+
+  // ── Ground track (trail) ──
+  if (issTrack.length > 1) {
+    for (let i = 1; i < issTrack.length; i++) {
+      const pt   = latLonToXY(issTrack[i].lat,   issTrack[i].lon,   W, H);
+      const prev = latLonToXY(issTrack[i-1].lat, issTrack[i-1].lon, W, H);
+      if (Math.abs(pt.x - prev.x) > W/2) continue; // skip wraparound
+      const age     = (issTrack.length - i) / issTrack.length; // 0=newest, 1=oldest
+      const opacity = 0.6 * (1 - age * 0.7);
+      ctx.strokeStyle = `rgba(0,255,136,${opacity.toFixed(2)})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(pt.x, pt.y); ctx.stroke();
+    }
+  }
+
+  // ── Projected orbital path (next 90 min) — draws whenever we have ISS position ──
+  if (issLat !== null) {
+    // ISS orbital period: 92 min. Longitude advances ~360/92 deg/min eastward.
+    // Earth rotates ~0.25 deg/min westward beneath ISS.
+    // Net ground track advance: ~(360/92 - 0.25) = ~3.66 deg/min longitude
+    // Latitude oscillates between +/-51.6° (inclination)
+    // We compute approximate ground track by integrating known orbital parameters
+
+    const STEPS    = 180;  // one step per 30 seconds = 90 min total
+    const PERIOD   = 92;   // orbital period in minutes
+    const INC      = 51.6; // inclination degrees
+    const EARTH_ROT = 360 / (24 * 60); // Earth rotation deg/min
+
+    // Estimate current orbital phase from latitude
+    // lat = INC * sin(phase), so phase = arcsin(lat/INC)
+    // But we also need to know if ascending or descending
+    // Use track direction if available, else assume ascending
+    let ascending = true;
+    if (issTrack.length >= 2) {
+      ascending = issTrack[issTrack.length-1].lat > issTrack[issTrack.length-2].lat;
+    }
+
+    const sinPhase = Math.max(-1, Math.min(1, issLat / INC));
+    let phase = Math.asin(sinPhase); // radians
+    if (!ascending) phase = Math.PI - phase;
+
+    const phasePerStep  = (2 * Math.PI / PERIOD) * (30 / 60); // phase advance per 30s
+    const lonPerStep    = (360 / PERIOD) * (30 / 60) - EARTH_ROT * (30 / 60);
+
+    let curLon = issLon;
+    let curPhase = phase;
+    let prevPt = null;
+
+    ctx.setLineDash([3, 6]);
+    ctx.lineWidth = 1;
+
+    for (let i = 0; i <= STEPS; i++) {
+      const projLat = INC * Math.sin(curPhase);
+      const projLon = ((curLon + 180) % 360) - 180;
+      const pt = latLonToXY(projLat, projLon, W, H);
+
+      if (i > 0 && prevPt) {
+        const fade = 1 - (i / STEPS);
+        ctx.strokeStyle = `rgba(0,180,255,${(fade * 0.5).toFixed(2)})`;
+        if (Math.abs(pt.x - prevPt.x) > W / 2) {
+          // Wraparound — start new segment
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(pt.x, pt.y);
+        } else {
+          if (i === 1) { ctx.beginPath(); ctx.moveTo(prevPt.x, prevPt.y); }
+          ctx.lineTo(pt.x, pt.y);
+        }
+      }
+
+      prevPt = pt;
+      curPhase += phasePerStep;
+      curLon   += lonPerStep;
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  if (issLat === null) return;
+
+  // ── EONET natural event markers ──
+  drawEONETEvents(ctx, W, H);
+  updateMapLegend();
+
+  const issXY = latLonToXY(issLat, issLon, W, H);
+
+  // ── Visibility footprint (~2200km radius ≈ ~20° at equator) ──
+  // Convert 2200km to degrees: ~19.8°
+  const footprintDeg = 19.8;
+  const footprintPx  = (footprintDeg / 180) * H;
+  const grad = ctx.createRadialGradient(issXY.x, issXY.y, 0, issXY.x, issXY.y, footprintPx);
+  grad.addColorStop(0,   'rgba(0,255,136,0.08)');
+  grad.addColorStop(0.7, 'rgba(0,255,136,0.04)');
+  grad.addColorStop(1,   'rgba(0,255,136,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(issXY.x, issXY.y, footprintPx, 0, Math.PI * 2);
+  ctx.fill();
+  // Footprint border
+  ctx.strokeStyle = 'rgba(0,255,136,0.2)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath();
+  ctx.arc(issXY.x, issXY.y, footprintPx, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── User location ──
+  if (userLat !== null) {
+    const uXY = latLonToXY(userLat, userLon, W, H);
+
+    // Line from user to ISS
+    ctx.strokeStyle = 'rgba(0,212,255,0.2)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 5]);
+    ctx.beginPath(); ctx.moveTo(uXY.x, uXY.y); ctx.lineTo(issXY.x, issXY.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Check if user is inside footprint
+    const dist = Math.sqrt(Math.pow(uXY.x - issXY.x, 2) + Math.pow(uXY.y - issXY.y, 2));
+    const inFootprint = dist < footprintPx;
+
+    // User dot
+    ctx.beginPath();
+    ctx.arc(uXY.x, uXY.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = inFootprint ? 'rgba(0,255,136,0.9)' : 'rgba(0,212,255,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = inFootprint ? 'rgba(0,255,136,0.5)' : 'rgba(0,212,255,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Pulse ring on user if in footprint
+    if (inFootprint) {
+      ctx.beginPath();
+      ctx.arc(uXY.x, uXY.y, 10, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0,255,136,0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // User label
+    ctx.font = 'bold 11px Share Tech Mono, monospace';
+    ctx.fillStyle = inFootprint ? '#00ff88' : '#00d4ff';
+    ctx.fillText('YOU', uXY.x + 8, uXY.y - 6);
+
+    // Distance label on line midpoint
+    const midX = (uXY.x + issXY.x) / 2;
+    const midY = (uXY.y + issXY.y) / 2;
+    const distKm = haversineKm(userLat, userLon, issLat, issLon);
+    ctx.font = '10px Share Tech Mono, monospace';
+    ctx.fillStyle = 'rgba(200,230,245,0.85)';
+    ctx.fillText(Math.round(distKm).toLocaleString() + ' KM', midX + 4, midY - 4);
+
+    // Update map tag with distance
+    const tag = document.getElementById('map-tag');
+    if (tag) {
+      const inRange = distKm < 2200;
+      tag.textContent = inRange ? `⚡ ISS IN RANGE — ${Math.round(distKm).toLocaleString()} KM` : `${Math.round(distKm).toLocaleString()} KM FROM YOU`;
+      tag.style.color = inRange ? 'var(--green)' : '';
+    }
+  }
+
+  // ── ISS dot ──
+  // Outer glow
+  const glow = ctx.createRadialGradient(issXY.x, issXY.y, 0, issXY.x, issXY.y, 12);
+  glow.addColorStop(0, 'rgba(0,255,136,0.4)');
+  glow.addColorStop(1, 'rgba(0,255,136,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(issXY.x, issXY.y, 12, 0, Math.PI*2); ctx.fill();
+  // Core dot
+  ctx.beginPath(); ctx.arc(issXY.x, issXY.y, 4, 0, Math.PI*2);
+  ctx.fillStyle = '#00ff88'; ctx.fill();
+  // ISS label
+  ctx.font = 'bold 11px Share Tech Mono, monospace';
+  ctx.fillStyle = '#00ff88';
+  ctx.fillText('ISS', issXY.x + 8, issXY.y - 6);
+}
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+let worldGeoJSON = null;
+
+async function loadGeoJSON() {
+  if (worldGeoJSON) return worldGeoJSON;
+  try {
+    // Use topojson library (loaded via script tag) to decode properly
+    const [topoRes] = await Promise.all([
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json')
+    ]);
+    const topo = await topoRes.json();
+    // topojson.feature is available via the CDN script
+    const geoData = topojson.feature(topo, topo.objects.land);
+    worldGeoJSON = geoData.features;
+    return worldGeoJSON;
+  } catch(e) {
+    console.warn('GeoJSON load failed:', e);
+    return null;
+  }
+}
+
+function drawContinents(ctx, W, H) {
+  ctx.fillStyle = 'rgba(8,28,52,0.85)';
+  ctx.strokeStyle = 'rgba(0,212,255,0.25)';
+  ctx.lineWidth = 0.5;
+
+  if (!worldGeoJSON || !worldGeoJSON.length) return;
+
+  worldGeoJSON.forEach(feat => {
+    const geom = feat.geometry;
+    if (!geom) return;
+    const polys = geom.type === 'Polygon'
+      ? [geom.coordinates]
+      : geom.type === 'MultiPolygon'
+        ? geom.coordinates
+        : [];
+
+    polys.forEach(poly => {
+      poly.forEach(ring => {
+        ctx.beginPath();
+        ring.forEach(([lon, lat], i) => {
+          const pt = latLonToXY(lat, lon, W, H);
+          if (i === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      });
+    });
+  });
+}
+
+// ── ORBIT WEB — NASA-style overlapping orbit paths ──────
+function drawOrbitWeb(issLat, issLon) {
+  const canvas = document.getElementById('iss-map');
+  if (!canvas) return;
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+
+  // Base map
+  ctx.fillStyle = '#020810'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#030d1e'; ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(0,212,255,0.06)'; ctx.lineWidth = 1;
+  for (let lat = -90; lat <= 90; lat += 30) {
+    const { y } = latLonToXY(lat, 0, W, H);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  for (let lon = -180; lon <= 180; lon += 30) {
+    const { x } = latLonToXY(0, lon, W, H);
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  const eq = latLonToXY(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(0,212,255,0.15)';
+  ctx.beginPath(); ctx.moveTo(0, eq.y); ctx.lineTo(W, eq.y); ctx.stroke();
+
+  drawContinents(ctx, W, H);
+
+  if (issLat === null) return;
+
+  // ── EONET natural event markers ──
+  drawEONETEvents(ctx, W, H);
+  updateMapLegend();
+
+  // ── Draw multiple orbits — past + future, woven web pattern ──
+  const PERIOD     = 92;   // minutes
+  const INC        = 51.6; // inclination
+  const EARTH_ROT  = 360 / (24 * 60);
+  const ORBIT_COUNT = 5;   // number of full orbits to show (NASA-style shows ~4-5)
+  const STEPS_PER_ORBIT = 200;
+
+  // Determine current phase from issLat (ascending assumed unless track says otherwise)
+  let ascending = true;
+  if (issTrack.length >= 2) {
+    ascending = issTrack[issTrack.length-1].lat > issTrack[issTrack.length-2].lat;
+  }
+  const sinPhase = Math.max(-1, Math.min(1, issLat / INC));
+  let basePhase = Math.asin(sinPhase);
+  if (!ascending) basePhase = Math.PI - basePhase;
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(212,175,55,0.45)'; // gold/amber NASA-style
+
+  // Draw orbits centered on now: some past, some future
+  const halfCount = Math.floor(ORBIT_COUNT / 2);
+  for (let o = -halfCount; o <= halfCount; o++) {
+    const orbitStartMin = o * PERIOD; // minutes offset from now
+    let curPhase = basePhase + (orbitStartMin / PERIOD) * 2 * Math.PI;
+    let curLon   = issLon - ((orbitStartMin / PERIOD) * 360) + (orbitStartMin * EARTH_ROT);
+    // adjust: as time moves forward, lon increases by orbital rate minus earth rotation
+    curLon = issLon; // reset, recompute properly below
+    curPhase = basePhase;
+
+    let prevPt = null;
+    ctx.beginPath();
+    for (let i = 0; i <= STEPS_PER_ORBIT; i++) {
+      const tMin = orbitStartMin + (i / STEPS_PER_ORBIT) * PERIOD;
+      const phase = basePhase + (tMin / PERIOD) * 2 * Math.PI;
+      const lonDrift = (tMin / PERIOD) * 360 - tMin * EARTH_ROT;
+      const lat = INC * Math.sin(phase);
+      const lon = ((issLon + lonDrift + 180) % 360 + 360) % 360 - 180;
+      const pt  = latLonToXY(lat, lon, W, H);
+
+      if (i === 0) { ctx.moveTo(pt.x, pt.y); }
+      else {
+        if (prevPt && Math.abs(pt.x - prevPt.x) > W/2) {
+          ctx.stroke(); ctx.beginPath(); ctx.moveTo(pt.x, pt.y);
+        } else {
+          ctx.lineTo(pt.x, pt.y);
+        }
+      }
+      prevPt = pt;
+    }
+    ctx.stroke();
+  }
+
+  // ── Visibility footprint at current position ──
+  const issXY = latLonToXY(issLat, issLon, W, H);
+  const footprintDeg = 19.8;
+  const footprintPx  = (footprintDeg / 180) * H;
+  ctx.strokeStyle = 'rgba(0,255,136,0.25)';
+  ctx.setLineDash([4,6]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(issXY.x, issXY.y, footprintPx, 0, Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ── User marker ──
+  if (userLat !== null) {
+    const uXY = latLonToXY(userLat, userLon, W, H);
+    ctx.beginPath(); ctx.arc(uXY.x, uXY.y, 5, 0, Math.PI*2);
+    ctx.fillStyle = '#00d4ff'; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,212,255,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = 'bold 11px Share Tech Mono, monospace';
+    ctx.fillStyle = '#00d4ff';
+    ctx.fillText('YOU', uXY.x + 8, uXY.y - 6);
+  }
+
+  // ── ISS marker — diamond style like NASA's tracker ──
+  ctx.save();
+  ctx.translate(issXY.x, issXY.y);
+  ctx.rotate(Math.PI/4);
+  ctx.fillStyle = '#00ff88';
+  ctx.fillRect(-5, -5, 10, 10);
+  ctx.restore();
+  // Glow
+  const glow = ctx.createRadialGradient(issXY.x, issXY.y, 0, issXY.x, issXY.y, 14);
+  glow.addColorStop(0, 'rgba(0,255,136,0.4)');
+  glow.addColorStop(1, 'rgba(0,255,136,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(issXY.x, issXY.y, 14, 0, Math.PI*2); ctx.fill();
+
+  ctx.font = 'bold 11px Share Tech Mono, monospace';
+  ctx.fillStyle = '#00ff88';
+  ctx.fillText('ISS', issXY.x + 10, issXY.y - 6);
+}
+
+function updateMap(issLat, issLon) {
+  // Add to track (keep last 60 positions = ~10 min of trail)
+  if (issLat !== null) {
+    issTrack.push({ lat: issLat, lon: issLon });
+    if (issTrack.length > 60) issTrack.shift();
+  }
+  if (currentMapView === '2d') drawMap(issLat, issLon);
+  else if (currentMapView === 'web') drawOrbitWeb(issLat, issLon);
+  else updateGlobeISS(issLat, issLon);
+}
+
+let issLossLogged = false;
+
+async function fetchISS(manual) {
+  try {
+    // Ensure we have a current TLE. Retry quickly at first (page-load contention is usually a
+    // one-off blip) and only back off hard once several attempts in a row have actually failed —
+    // otherwise a single transient failure at boot silently locks out retries for 2 minutes.
+    if (!issSatrec) {
+      const now2 = Date.now();
+      const retryInterval = tleConsecutiveFails >= TLE_FAST_RETRY_LIMIT ? TLE_RETRY_SLOW : TLE_RETRY_FAST;
+      if (!manual && now2 - lastTleAttempt < retryInterval) throw new Error('no TLE available');
+      lastTleAttempt = now2;
+      const ok = await fetchTLE();
+      if (!ok) { tleConsecutiveFails++; throw new Error('no TLE available'); }
+      tleConsecutiveFails = 0;
+    }
+
+    const now = new Date();
+    const posVel = satellite.propagate(issSatrec, now);
+    if (!posVel.position) throw new Error('propagation failed');
+
+    const gmst = satellite.gstime(now);
+    const geo  = satellite.eciToGeodetic(posVel.position, gmst);
+
+    const lat = satellite.degreesLat(geo.latitude).toFixed(4);
+    const lon = satellite.degreesLong(geo.longitude).toFixed(4);
+    const alt = geo.height.toFixed(1) + ' KM';
+
+    // Orbital velocity magnitude (km/s -> km/h)
+    const vel = posVel.velocity;
+    const speedKmS = Math.sqrt(vel.x**2 + vel.y**2 + vel.z**2);
+    const speedKmH = Math.round(speedKmS * 3600).toLocaleString() + ' KM/H';
+
+    // Visibility — is the ISS currently sunlit?
+    const sunlit = isSatelliteSunlit(issSatrec, now);
+    const vis = sunlit ? 'DAYLIGHT' : 'ECLIPSED';
+
+    const ts = now.toUTCString().split(' ').slice(1,5).join(' ');
+
+    updateMap(parseFloat(lat), parseFloat(lon));
+    document.getElementById('iss-body').innerHTML = `
+      <div class="iss-coords">
+        <div class="cbox"><div class="clbl">LATITUDE</div><div class="cval">${lat}°</div></div>
+        <div class="cbox"><div class="clbl">LONGITUDE</div><div class="cval">${lon}°</div></div>
+      </div>
+      <div class="irow"><span class="ilbl">ALTITUDE</span><span class="ival">${alt}</span></div>
+      <div class="irow"><span class="ilbl">ORBITAL SPEED</span><span class="ival">${speedKmH}</span></div>
+      <div class="irow"><span class="ilbl">VISIBILITY</span><span class="ival">${vis}</span></div>
+      <div class="irow"><span class="ilbl">LAST FIX</span><span class="ival">${ts}</span></div>
+      <button class="rbtn" onclick="fetchISS()">↻ REFRESH TELEMETRY</button>
+      <div id="pass-section"></div>`;
+    appendLocationRow();
+    sysLog(`ISS POS: ${lat}° LAT ${lon}° LON`,'ok');
+    setStatus('dot-iss','lbl-iss', true, 'ISS TELEMETRY NOMINAL');
+    issLossLogged = false;
+    if (userLat !== null) { if (nextPasses.length) renderPassCountdown(); else fetchPassPredictions(); }
+  } catch(e) {
+    document.getElementById('iss-body').innerHTML=`<div style="font-family:var(--mono);font-size:0.55rem;color:var(--red);padding:8px">⚠ ISS SIGNAL LOST</div><button class="rbtn" onclick="fetchISS(true)">↻ RETRY</button><div id="pass-section"></div>`;
+    setStatus('dot-iss','lbl-iss', false, 'ISS SIGNAL LOST');
+    if (!issLossLogged) { sysLog('ISS TELEMETRY LOSS: ' + e.message,'warn'); issLossLogged = true; }
+  }
+}
+
+// ── EARTH OBSERVATION PHOTOS FROM THE ISS ────────────────
+// NASA's Image and Video Library (images-api.nasa.gov) — free, CORS-enabled, no key required.
+// Filtered to nasa_id matching /^iss\d+e/, the ID format NASA uses specifically for crew Earth
+// observation photography shot from the ISS (vs. general NASA image library results).
+let earthPhotos     = [];
+let earthPhotoIdx   = 0;
+let earthPhotoTimer = null;
+
+function renderEarthPhoto() {
+  const photo = earthPhotos[earthPhotoIdx];
+  if (!photo) return;
+  const data = photo.data[0];
+  const pick = photo.links.find(l => l.href.includes('~large')) || photo.links.find(l => l.href.includes('~medium')) || photo.links[0];
+
+  const img = document.getElementById('earth-photo-img');
+  img.classList.remove('loaded');
+  img.onload = () => img.classList.add('loaded');
+  img.src = pick.href;
+  img.alt = data.title || 'Earth observation photo from the ISS';
+
+  const dateStr = data.date_created ? new Date(data.date_created).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase() : '';
+  document.getElementById('earth-photo-date').textContent = [dateStr, data.photographer ? data.photographer.toUpperCase() : null].filter(Boolean).join(' · ');
+  document.getElementById('earth-photo-title').textContent = data.title || 'EARTH OBSERVATION';
+  document.getElementById('earth-photo-desc').textContent = (data.description || '').replace(/\s+/g, ' ').trim();
+  document.getElementById('earth-photo-link').href = `https://images.nasa.gov/details/${data.nasa_id}`;
+  document.getElementById('earth-photo-counter').textContent = `${earthPhotoIdx + 1} / ${earthPhotos.length}`;
+}
+
+function nextEarthPhoto() {
+  if (!earthPhotos.length) return;
+  earthPhotoIdx = (earthPhotoIdx + 1) % earthPhotos.length;
+  renderEarthPhoto();
+}
+
+function prevEarthPhoto() {
+  if (!earthPhotos.length) return;
+  earthPhotoIdx = (earthPhotoIdx - 1 + earthPhotos.length) % earthPhotos.length;
+  renderEarthPhoto();
+}
+
+async function fetchEarthPhotos() {
+  try {
+    const r = await fetch('https://images-api.nasa.gov/search?q=Earth%20Observation&media_type=image&year_start=2020');
+    if (!r.ok) throw new Error('images api ' + r.status);
+    const d = await r.json();
+    // "q=Earth Observation" alone also surfaces tangential results (CubeSat deployments,
+    // PACE satellite launch coverage, asteroid radar imagery) that just mention "Earth" —
+    // require BOTH the ISS crew-photography ID format AND a title that's actually an Earth
+    // observation photo (not just something that matched the free-text search).
+    const items = (d.collection?.items || []).filter(it => {
+      const dat = it.data?.[0];
+      return dat?.nasa_id && /^iss\d+e/i.test(dat.nasa_id)
+        && /^earth observations?\b/i.test((dat.title || '').trim())
+        && it.links?.length;
+    });
+    if (!items.length) throw new Error('no ISS earth observation photos found');
+
+    // Shuffle so the panel doesn't open on the same photo every page load
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    earthPhotos = items;
+    earthPhotoIdx = 0;
+    renderEarthPhoto();
+    document.getElementById('earth-photo-tag').textContent = `NASA · ${items.length} PHOTOS LOADED`;
+    sysLog(`EARTH OBSERVATION: ${items.length} ISS CREW PHOTOS LOADED`, 'ok');
+
+    if (earthPhotoTimer) clearInterval(earthPhotoTimer);
+    earthPhotoTimer = setInterval(nextEarthPhoto, 45000);
+  } catch(e) {
+    document.getElementById('earth-photo-title').textContent = 'EARTH PHOTO FEED UNAVAILABLE';
+    document.getElementById('earth-photo-date').textContent = '';
+    sysLog('EARTH PHOTO FEED ERROR: ' + e.message, 'warn');
+  }
+}
+
+async function fetchCrew() {
+  const urls=['https://corquaid.github.io/international-space-station-APIs/JSON/people-in-space.json','https://api.open-notify.org/astros.json'];
+  for (const url of urls) {
+    try {
+      const r=await fetch(url); if(!r.ok) continue;
+      const d=await r.json();
+      const people=(d.people||[]).filter(p=>p.iss!==false);
+      const count=people.length||d.number;
+      const init=n=>n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      document.getElementById('crew-tag').textContent=count+' PERSONNEL';
+      document.getElementById('crew-body').innerHTML=`
+        <div style="grid-column:1/-1;font-family:var(--mono);font-size:0.55rem;color:var(--dim);letter-spacing:0.1em;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:4px;">
+          HUMANS OFF EARTH: <span style="color:var(--green);font-size:0.68rem">${count}</span>
+        </div>
+        ${people.map(p=>{
+          const sub=[p.agency||'',p.position||''].filter(Boolean).join(' · ')||(p.spacecraft||p.craft||'ISS');
+          const href=/^https?:\/\//i.test(p.url||'') ? p.url : `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(p.name)}`;
+          return`<a class="ci" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="View ${escapeHtml(p.name)}'s profile"><div class="cav">${escapeHtml(init(p.name))}</div><div><div class="cn">${escapeHtml(p.name.toUpperCase())}</div><div class="cc">${escapeHtml(sub.toUpperCase())}</div></div></a>`;
+        }).join('')}`;
+      sysLog(`CREW MANIFEST: ${count} ACTIVE`,'ok'); return;
+    } catch(e) { continue; }
+  }
+  document.getElementById('crew-body').innerHTML=`<div style="font-family:var(--mono);font-size:0.55rem;color:var(--red);padding:8px">⚠ CREW DATA UNAVAILABLE</div>`;
+  sysLog('CREW MANIFEST ERROR','warn');
+}
+
+async function fetchLaunches() {
+  const CACHE_KEY = 'cosmos_launches';
+  const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+  const fmtD = d => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase() : 'TBD';
+
+  function renderLaunches(launches) {
+    document.getElementById('sx-body').innerHTML = launches.map(l => {
+      const agency = l.launch_service_provider?.abbrev || l.launch_service_provider?.name || '';
+      const rocket = l.rocket?.configuration?.full_name || l.rocket?.configuration?.name || '';
+      const status = l.status?.name || l.status?.abbrev || 'TBD';
+      const isGo   = l.status?.id === 1;
+      const isTBD  = l.status?.id === 2;
+      const tagCls = isGo ? 's' : isTBD ? 'u' : 'f';
+      const name   = l.mission?.name || l.name || '—';
+      const meta   = [agency, rocket].filter(Boolean).join(' · ');
+      const href   = l.slug ? `https://spacelaunchnow.me/launch/${l.slug}/` : `https://spacelaunchnow.me/?search=${encodeURIComponent(name)}`;
+      return `<a class="litem" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">
+        <div class="lname">${escapeHtml(name.toUpperCase())}</div>
+        ${meta ? `<div style="font-family:var(--mono);font-size:0.46rem;color:var(--dim);letter-spacing:0.06em;margin-bottom:3px">${escapeHtml(meta)}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="ltag ${tagCls}">${escapeHtml(status)}</span>
+          <span class="ldate" style="margin:0">${fmtD(l.net)}</span>
+        </div>
+      </a>`;
+    }).join('');
+  }
+
+  // Check localStorage cache first
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const { ts, data } = JSON.parse(cached);
+      const age = Date.now() - ts;
+      if (age < CACHE_TTL) {
+        renderLaunches(data);
+        const mins = Math.round((CACHE_TTL - age) / 60000);
+        sysLog(`LAUNCHES FROM CACHE — REFRESHES IN ${mins} MIN`, 'ok');
+        return;
+      }
+    }
+  } catch(e) {}
+
+  // Fetch fresh data
+  try {
+    const r = await fetch('https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=5&format=json&mode=list');
+    if (!r.ok) {
+      // Rate limited — try to show cached even if stale
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          renderLaunches(data);
+          setStatus('dot-launch','lbl-launch', null, 'RATE LIMITED · CACHED');
+      sysLog('LAUNCHES: RATE LIMITED — SHOWING CACHED DATA', 'warn');
+          return;
+        }
+      } catch(e) {}
+      throw new Error('status ' + r.status);
+    }
+    const json = await r.json();
+    const launches = json.results || [];
+    // Save to cache
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: launches }));
+    renderLaunches(launches);
+    setStatus('dot-launch','lbl-launch', true, `LAUNCH LIBRARY LIVE`);
+    sysLog(`LAUNCH MANIFEST: ${launches.length} UPCOMING MISSIONS`, 'ok');
+  } catch(e) {
+    // Last resort — show stale cache
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { ts, data } = JSON.parse(cached);
+        renderLaunches(data);
+        const hrs = Math.round((Date.now()-ts)/3600000);
+        sysLog(`LAUNCHES: STALE CACHE (${hrs}H OLD)`, 'warn');
+        return;
+      }
+    } catch(e2) {}
+    document.getElementById('sx-body').innerHTML =
+      `<div style="font-family:var(--mono);font-size:0.55rem;color:var(--red);padding:8px">⚠ LAUNCH DATA UNAVAILABLE — RATE LIMITED</div>`;
+    setStatus('dot-launch','lbl-launch', null, 'LAUNCHES RATE LIMITED');
+    sysLog('LAUNCH FEED ERROR: ' + e.message, 'warn');
+  }
+}
+
+async function fetchNEO() {
+  const el = document.getElementById('neo-body');
+  try {
+    const kpRes = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+    const kpRaw = await kpRes.json();
+    const solar = { Bt: null };
+
+    // Format: array of objects {time_tag, Kp, a_running, station_count}
+    const kpRows = Array.isArray(kpRaw) ? kpRaw : [];
+    let latestKp = null;
+    for (let i = kpRows.length - 1; i >= 0; i--) {
+      const val = parseFloat(kpRows[i].Kp);
+      if (!isNaN(val) && val >= 0) { latestKp = val; break; }
+    }
+
+    // NOAA G-scale: G1=Kp5, G2=Kp6, G3=Kp7, G4=Kp8, G5=Kp9. Below Kp5 there's no storm.
+    function kpLabel(kp) {
+      // Effects text sourced from NOAA's official Space Weather Scales (spaceweather.gov/noaa-scales-explanation)
+      if (kp === null) return { label:'—', cls:'', color:'var(--dim)', def:'' };
+      if (kp >= 9) return { label:'EXTREME STORM G5',  color:'var(--red)',   cls:'nhaz',
+        def:'Aurora seen as low as Florida & S. Texas. Grid blackouts possible, HF radio may be impossible for 1-2 days.' };
+      if (kp >= 8) return { label:'SEVERE STORM G4',   color:'var(--red)',   cls:'nhaz',
+        def:'Aurora seen as low as Alabama & N. California. Voltage control problems, HF radio sporadic.' };
+      if (kp >= 7) return { label:'STRONG STORM G3',   color:'var(--red)',   cls:'nhaz',
+        def:'Aurora seen as low as Illinois & Oregon. Satellite drag increases, HF radio intermittent.' };
+      if (kp >= 6) return { label:'MODERATE STORM G2', color:'var(--amber)', cls:'',
+        def:'Aurora seen as low as New York & Idaho. HF radio propagation fades at higher latitudes.' };
+      if (kp >= 5) return { label:'MINOR STORM G1',    color:'var(--amber)', cls:'',
+        def:'Aurora commonly visible in N. Michigan & Maine. Weak power grid fluctuations possible.' };
+      if (kp >= 4) return { label:'ACTIVE',            color:'var(--textbr)',cls:'',
+        def:'Below G1 storm threshold — no NOAA-scale impacts expected.' };
+      if (kp >= 3) return { label:'UNSETTLED',         color:'var(--textbr)',cls:'',
+        def:'Below G1 storm threshold — no NOAA-scale impacts expected.' };
+      return               { label:'QUIET',             color:'var(--green)', cls:'nsafe',
+        def:'Below G1 storm threshold — no NOAA-scale impacts expected.' };
+    }
+
+    const kpInfo   = kpLabel(latestKp);
+    const windSpd  = '—';
+    const windDen  = '—';
+    const bField   = solar.Bt ? solar.Bt + ' nT' : '—';
+    // "Geo conditions" is just the Kp-derived storm scale — no separate NOAA feed needed.
+    const geoScale = latestKp !== null ? (latestKp >= 5 ? kpInfo.label : 'NO STORM') : '—';
+
+    // Fetch solar flux (10.7cm) and sunspot number — both CORS-friendly
+    let solarFlux = '—', sunspots = '—';
+    try {
+      const fluxRes = await fetch('https://services.swpc.noaa.gov/products/10cm-flux-30-day.json');
+      const fluxRaw = await fluxRes.json();
+      // Format: array of objects or arrays — get latest
+      if (Array.isArray(fluxRaw) && fluxRaw.length > 0) {
+        const last = fluxRaw[fluxRaw.length - 1];
+        const val = last.flux || last[1];
+        if (val) solarFlux = parseFloat(val).toFixed(0) + ' SFU';
+      }
+    } catch(e) {}
+    try {
+      const ssRes = await fetch('https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json');
+      const ssRaw = await ssRes.json();
+      if (Array.isArray(ssRaw) && ssRaw.length > 0) {
+        const last = ssRaw[ssRaw.length - 1];
+        if (last.ssn !== undefined) sunspots = Math.round(last.ssn).toString();
+      }
+    } catch(e) {}
+
+    // Build last 6 Kp readings (NOAA reports every 3h) as a mini bar chart.
+    // Height uses sqrt scaling, not linear — Kp is logarithmic in effect, and a linear
+    // 0-9 scale makes low-but-real readings (Kp 1-3) render as an invisible sliver.
+    const now      = new Date();
+    const recentKp = kpRows.slice(-6).map(r => {
+      const v = parseFloat(r.Kp);
+      return { kp: (isNaN(v) || v < 0) ? 0 : v, time: r.time_tag ? new Date(r.time_tag + 'Z') : null };
+    });
+    const kpBars = recentKp.map(({kp, time}) => {
+      const pct   = Math.min(100, Math.sqrt(kp / 9) * 100);
+      const color = kp >= 7 ? 'var(--red)' : kp >= 5 ? 'var(--amber)' : 'var(--green2)';
+      const hrsAgo = time ? Math.round((now - time) / 3600000) : null;
+      const label  = hrsAgo === null ? '' : hrsAgo <= 1 ? 'NOW' : `-${hrsAgo}H`;
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px" title="Kp ${kp.toFixed(1)}${time ? ' at ' + time.toUTCString().slice(17,22) + ' UTC' : ''}">
+        <div style="width:100%;background:var(--border);height:30px;position:relative;overflow:hidden">
+          <div style="position:absolute;bottom:0;width:100%;height:${pct}%;background:${color};opacity:0.85;transition:height 0.5s"></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:0.42rem;color:var(--dim)">${label}</div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div style="margin-bottom:8px">
+        <div style="font-family:var(--mono);font-size:0.48rem;color:var(--dim);letter-spacing:0.1em;margin-bottom:4px">KP INDEX — GEOMAGNETIC ACTIVITY</div>
+        <div style="display:flex;gap:3px;align-items:flex-end;height:52px">${kpBars}</div>
+      </div>
+      <div class="nitem" style="border-bottom:none">
+        <div><div class="nname">KP INDEX</div><div class="ndist">PLANETARY GEOMAGNETIC</div></div>
+        <div style="text-align:right">
+          <div style="font-family:var(--display);font-size:0.9rem;font-weight:600;color:${kpInfo.color}">${latestKp !== null ? latestKp.toFixed(1) : '—'}</div>
+          <div style="font-family:var(--mono);font-size:0.46rem;color:${kpInfo.color};letter-spacing:0.06em">${kpInfo.label}</div>
+        </div>
+      </div>
+      ${kpInfo.def ? `<div style="font-family:var(--mono);font-size:0.44rem;color:var(--dim);line-height:1.6;letter-spacing:0.03em;padding-bottom:8px;margin-bottom:2px;border-bottom:1px solid var(--border)">${escapeHtml(kpInfo.def)}</div>` : ''}
+      <div class="nitem">
+        <div><div class="nname">SOLAR FLUX</div><div class="ndist">10.7CM RADIO · SFU</div></div>
+        <div style="text-align:right"><div class="nsize" style="color:var(--textbr)">${solarFlux}</div></div>
+      </div>
+      <div class="nitem">
+        <div><div class="nname">SUNSPOT COUNT</div><div class="ndist">OBSERVED · MONTHLY AVG</div></div>
+        <div style="text-align:right"><div class="nsize nsafe">${sunspots}</div></div>
+      </div>
+      <div class="nitem" style="border:none">
+        <div><div class="nname">GEO CONDITIONS</div><div class="ndist">NOAA SCALE</div></div>
+        <div style="text-align:right">
+          <div class="nsize ${latestKp !== null && latestKp >= 5 ? 'nhaz' : 'nsafe'}">${geoScale}</div>
+        </div>
+      </div>`;
+
+    window.currentKp = latestKp;
+    setStatus('dot-wx','lbl-wx', true, `KP ${latestKp !== null ? latestKp.toFixed(1) : '?'} · ${kpInfo.label}`);
+    sysLog(`SPACE WEATHER: KP=${latestKp !== null ? latestKp.toFixed(1) : '?'} — ${kpInfo.label}`, latestKp >= 4 ? 'warn' : 'ok');
+  } catch(e) {
+    el.innerHTML = `<div style="font-family:var(--mono);font-size:0.55rem;color:var(--red);padding:8px">⚠ SPACE WEATHER DATA UNAVAILABLE</div>`;
+    setStatus('dot-wx','lbl-wx', false, 'SPACE WEATHER OFFLINE');
+    sysLog('SPACE WEATHER FETCH ERROR','warn');
+  }
+}
+
+// Hardcoded planetary data — accurate, no API needed, never breaks
+const PLANETS = [
+  { name:'MERCURY', icon:'⬛', gravity:'3.70', moons:0,  orbit:'88.0',   mass:'3.3e23' },
+  { name:'VENUS',   icon:'🟡', gravity:'8.87', moons:0,  orbit:'224.7',  mass:'4.9e24' },
+  { name:'EARTH',   icon:'🌍', gravity:'9.81', moons:1,  orbit:'365.2',  mass:'6.0e24' },
+  { name:'MARS',    icon:'🔴', gravity:'3.72', moons:2,  orbit:'687.0',  mass:'6.4e23' },
+  { name:'JUPITER', icon:'🟠', gravity:'24.79',moons:95, orbit:'4331',   mass:'1.9e27' },
+  { name:'SATURN',  icon:'🪐', gravity:'10.44',moons:146,orbit:'10747',  mass:'5.7e26' },
+  { name:'URANUS',  icon:'🔵', gravity:'8.87', moons:28, orbit:'30589',  mass:'8.7e25' },
+  { name:'NEPTUNE', icon:'💙', gravity:'11.15',moons:16, orbit:'59800',  mass:'1.0e26' },
+  { name:'PLUTO',   icon:'🟤', gravity:'0.62', moons:5,  orbit:'90560',  mass:'1.3e22', url:'https://science.nasa.gov/dwarf-planets/pluto/' },
+];
+
+async function fetchPlanets() {
+  document.getElementById('planets-body').innerHTML = `<div class="pgrid">${PLANETS.map(p=>{
+    const href = p.url || `https://science.nasa.gov/${p.name.toLowerCase()}/`;
+    return `<a class="ptile" href="${href}" target="_blank" rel="noopener noreferrer">
+      <div class="pico">${p.icon}</div>
+      <div class="pname">${p.name}</div>
+      <div class="pstat">
+        GRAVITY <b>${p.gravity} m/s²</b><br>
+        MOONS <b>${p.moons}</b><br>
+        ORBIT <b>${p.orbit} d</b><br>
+        MASS <b>${p.mass} kg</b>
+      </div>
+    </a>`;
+  }).join('')}</div>`;
+  sysLog('PLANETARY DATABASE LOADED','ok');
+}
+
+// ── GRAVITY WEIGHT CALCULATOR ─────────────────────────────
+let weightUnit = 'lbs';
+const LBS_PER_KG = 2.20462;
+
+function setWeightUnit(unit) {
+  if (unit === weightUnit) return;
+  const input = document.getElementById('weight-input');
+  const raw   = parseFloat(input.value);
+  if (raw > 0) {
+    const converted = unit === 'kg' ? raw / LBS_PER_KG : raw * LBS_PER_KG;
+    input.value = (Math.round(converted * 10) / 10).toString();
+  }
+  weightUnit = unit;
+  document.getElementById('btn-unit-lbs').classList.toggle('active', unit === 'lbs');
+  document.getElementById('btn-unit-kg').classList.toggle('active', unit === 'kg');
+  updateGravityCalc();
+}
+
+function updateGravityCalc() {
+  const el = document.getElementById('gravity-results');
+  if (!el) return;
+  const input = document.getElementById('weight-input');
+  const raw = parseFloat(input.value);
+
+  if (!raw || raw <= 0) {
+    el.innerHTML = `<div style="grid-column:1/-1;font-family:var(--mono);font-size:0.55rem;color:var(--dim);padding:16px;text-align:center">ENTER YOUR WEIGHT ABOVE TO CALCULATE</div>`;
+    return;
+  }
+
+  const earthG = parseFloat(PLANETS.find(p => p.name === 'EARTH').gravity);
+  el.innerHTML = PLANETS.map(p => {
+    const g        = parseFloat(p.gravity);
+    const weight   = raw * (g / earthG);
+    const isEarth  = p.name === 'EARTH';
+    return `<div class="ptile" style="cursor:default;${isEarth ? 'border-color:var(--accent2)' : ''}">
+      <div class="pico">${p.icon}</div>
+      <div class="pname">${p.name}</div>
+      <div class="pstat">
+        <span style="font-family:var(--display);font-size:0.85rem;font-weight:600;color:${isEarth ? 'var(--accent)' : 'var(--textbr)'}">${weight.toFixed(1)}</span><br>
+        ${escapeHtml(weightUnit.toUpperCase())}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
+// ── ISS PASS PREDICTION — SGP4 ORBIT PROPAGATION ──────────
+let issTLE = null;
+let issSatrec = null;
+
+const TLE_CACHE_KEY        = 'cosmos_iss_tle';
+const TLE_RETRY_FAST       = 15000;  // first few failures: retry quickly — page-load contention is usually transient
+const TLE_RETRY_SLOW       = 120000; // after repeated failures: back off hard, the source is likely actually down
+const TLE_FAST_RETRY_LIMIT = 3;
+let   lastTleAttempt       = 0;
+let   tleFailureLogged     = false;
+let   tleConsecutiveFails  = 0;
+
+// Two independent, CORS-friendly TLE sources — Celestrak is the primary, but it's a small
+// single-operator service that goes down/rate-limits sometimes, so wheretheiss.at (which
+// republishes the same NORAD TLE data) is tried next before giving up.
+async function fetchTleFromCelestrak() {
+  const r = await fetch('https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE');
+  if (!r.ok) throw new Error('celestrak ' + r.status);
+  const lines = (await r.text()).trim().split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length < 3) throw new Error('celestrak: bad TLE format');
+  return { line1: lines[1], line2: lines[2] };
+}
+
+async function fetchTleFromWtia() {
+  const r = await fetch('https://api.wheretheiss.at/v1/satellites/25544/tles');
+  if (!r.ok) throw new Error('wheretheiss.at ' + r.status);
+  const d = await r.json();
+  if (!d.line1 || !d.line2) throw new Error('wheretheiss.at: bad TLE format');
+  return { line1: d.line1, line2: d.line2 };
+}
+
+const TLE_SOURCES = [
+  { name: 'CELESTRAK',       fn: fetchTleFromCelestrak },
+  { name: 'WHERETHEISS.AT',  fn: fetchTleFromWtia },
+];
+
+async function fetchTLE() {
+  for (const src of TLE_SOURCES) {
+    try {
+      const { line1, line2 } = await src.fn();
+      issTLE = { line1, line2 };
+      issSatrec = satellite.twoline2satrec(line1, line2);
+      try { localStorage.setItem(TLE_CACHE_KEY, JSON.stringify({ ts: Date.now(), line1, line2 })); } catch(e) {}
+      sysLog(`ISS TLE ACQUIRED VIA ${src.name} — ORBIT PROPAGATION READY`, 'ok');
+      tleFailureLogged = false;
+      return true;
+    } catch(e) { /* try next source */ }
+  }
+
+  // All live sources failed — fall back to a cached TLE rather than losing tracking entirely.
+  // TLEs stay accurate enough for this app's purposes (visualization/pass prediction) for hours.
+  if (!issSatrec) {
+    try {
+      const cached = localStorage.getItem(TLE_CACHE_KEY);
+      if (cached) {
+        const { ts, line1, line2 } = JSON.parse(cached);
+        issTLE = { line1, line2 };
+        issSatrec = satellite.twoline2satrec(line1, line2);
+        const hrs = Math.round((Date.now() - ts) / 3600000);
+        sysLog(`TLE FETCH FAILED — USING CACHED TLE (${hrs}H OLD)`, 'warn');
+        return true;
+      }
+    } catch(e2) {}
+  }
+  if (!tleFailureLogged) {
+    sysLog('TLE FETCH ERROR: all sources unreachable', 'warn');
+    tleFailureLogged = true;
+  }
+  return false;
+}
+
+// Compute look angles (azimuth, elevation, range) for a given time
+function getLookAngles(satrec, observerLat, observerLon, observerAlt, date) {
+  const gmst = satellite.gstime(date);
+  const posVel = satellite.propagate(satrec, date);
+  if (!posVel.position) return null;
+  const posEci = posVel.position;
+  const observerGd = {
+    longitude: satellite.degreesToRadians(observerLon),
+    latitude:  satellite.degreesToRadians(observerLat),
+    height:    observerAlt / 1000 // km
+  };
+  const positionEcf = satellite.eciToEcf(posEci, gmst);
+  const lookAngles  = satellite.ecfToLookAngles(observerGd, positionEcf);
+  return {
+    azimuth:   satellite.radiansToDegrees(lookAngles.azimuth),
+    elevation: satellite.radiansToDegrees(lookAngles.elevation),
+    range:     lookAngles.rangeSat
+  };
+}
+
+// Check if a geodetic point is in Earth's shadow (for ISS visibility — needs to be sunlit)
+function isSatelliteSunlit(satrec, date) {
+  const posVel = satellite.propagate(satrec, date);
+  if (!posVel.position) return false;
+  const posEci = posVel.position; // km, ECI frame
+
+  // Sun position (simplified) — Astronomy Engine gives accurate sun vector
+  try {
+    const sunEq = Astronomy.Equator(Astronomy.Body.Sun, Astronomy.AstroTime(date), null, true, true);
+    const sunDist = sunEq.dist * 149597870.7; // AU to km
+    const ra = sunEq.ra * 15 * Math.PI/180; // hours to radians
+    const dec = sunEq.dec * Math.PI/180;
+    const sunVec = {
+      x: sunDist * Math.cos(dec) * Math.cos(ra),
+      y: sunDist * Math.cos(dec) * Math.sin(ra),
+      z: sunDist * Math.sin(dec)
+    };
+    // Check if satellite is in Earth's shadow (simple cylindrical shadow model)
+    const dot = posEci.x*sunVec.x + posEci.y*sunVec.y + posEci.z*sunVec.z;
+    if (dot > 0) return true; // satellite is on day side relative to sun direction
+    // Check perpendicular distance from Earth-Sun line
+    const sunMag = Math.sqrt(sunVec.x**2+sunVec.y**2+sunVec.z**2);
+    const satMag = Math.sqrt(posEci.x**2+posEci.y**2+posEci.z**2);
+    const cosAngle = dot/(sunMag*satMag);
+    const perpDist = satMag * Math.sqrt(1-cosAngle*cosAngle);
+    return perpDist > 6371; // Earth radius km — outside shadow cylinder = sunlit
+  } catch(e) {
+    return true; // assume visible if calc fails
+  }
+}
+
+// Check if observer location is in darkness (sun below horizon)
+function isObserverDark(lat, lon, date) {
+  try {
+    const observer = new Astronomy.Observer(lat, lon, 0);
+    const sunHor = Astronomy.Horizon(Astronomy.AstroTime(date), observer,
+      Astronomy.Equator(Astronomy.Body.Sun, Astronomy.AstroTime(date), observer, true, true).ra,
+      Astronomy.Equator(Astronomy.Body.Sun, Astronomy.AstroTime(date), observer, true, true).dec, 'normal');
+    return sunHor.altitude < -6; // civil twilight or darker
+  } catch(e) {
+    return true;
+  }
+}
+
+// Find next visible ISS passes
+async function findNextPasses(lat, lon, maxPasses=3, searchDays=5) {
+  if (!issSatrec) {
+    const ok = await fetchTLE();
+    if (!ok) return [];
+  }
+
+  const passes = [];
+  const now = new Date();
+  const stepSeconds = 30;
+  let inPass = false;
+  let currentPass = null;
+
+  for (let s = 0; s < searchDays * 86400; s += stepSeconds) {
+    const t = new Date(now.getTime() + s * 1000);
+    const look = getLookAngles(issSatrec, lat, lon, 0, t);
+    if (!look) continue;
+
+    const visible = look.elevation > 10
+                  && isObserverDark(lat, lon, t)
+                  && isSatelliteSunlit(issSatrec, t);
+
+    if (visible && !inPass) {
+      inPass = true;
+      currentPass = { start: t, maxElev: look.elevation, maxElevTime: t, azStart: look.azimuth };
+    } else if (visible && inPass) {
+      if (look.elevation > currentPass.maxElev) {
+        currentPass.maxElev = look.elevation;
+        currentPass.maxElevTime = t;
+      }
+    } else if (!visible && inPass) {
+      inPass = false;
+      currentPass.end = t;
+      currentPass.azEnd = look.azimuth;
+      passes.push(currentPass);
+      if (passes.length >= maxPasses) break;
+      currentPass = null;
+    }
+  }
+
+  return passes;
+}
+
+function azToCompass(az) {
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return dirs[Math.round(az/22.5) % 16];
+}
+
+// ── ISS PASS PREDICTION (legacy distance display) ────────
+let userLat=null,userLon=null,passTimer=null,alertFired=false;
+
+function requestLocation() {
+  if (!navigator.geolocation) {
+    renderPassPlaceholder('GEOLOCATION NOT SUPPORTED BY THIS BROWSER');
+    return;
+  }
+  sysLog('REQUESTING USER LOCATION...','info');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userLat = pos.coords.latitude;
+      userLon = pos.coords.longitude;
+      sysLog(`LOCATION ACQUIRED: ${userLat.toFixed(2)}°, ${userLon.toFixed(2)}°`,'ok');
+      appendLocationRow();
+      fetchPassPredictions();
+      fetchAurora();
+      calcSkyEvents();
+      if (globeInitialized) addGlobeUserMarker();
+    },
+    () => {
+      sysLog('LOCATION ACCESS DENIED','warn');
+      renderPassPlaceholder(null, true);
+    },
+    { timeout:10000, maximumAge:300000 }
+  );
+}
+
+function getPassSection() {
+  // Pass section lives inside iss-body — created when ISS loads
+  let el = document.getElementById('pass-section');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'pass-section';
+    el.className = 'pass-section';
+    const body = document.getElementById('iss-body');
+    if (body) body.appendChild(el);
+  }
+  return el;
+}
+
+function renderPassPlaceholder(msg, showBtn=false) {
+  const el = getPassSection();
+  el.innerHTML = `<div class="pass-hdr">NEXT VISIBLE PASS</div>
+    <div style="font-family:var(--mono);font-size:0.52rem;color:var(--dim);margin-bottom:${showBtn?'6px':'0'}">${msg||'LOCATION ACCESS REQUIRED'}</div>
+    ${showBtn?`<button class="loc-btn" onclick="requestLocation()">⊕ ENABLE LOCATION FOR PASS ALERTS</button>`:''}`;
+}
+
+let nextPasses = [];
+let passCountdownTimer = null;
+
+async function fetchPassPredictions() {
+  if (userLat===null) return;
+  const el = getPassSection();
+  if (!el) return;
+  el.innerHTML = `<div class="pass-hdr">NEXT VISIBLE PASS</div><div style="font-family:var(--mono);font-size:0.52rem;color:var(--dim)">CALCULATING ORBIT...</div>`;
+
+  try {
+    nextPasses = await findNextPasses(userLat, userLon, 3, 5);
+    if (!nextPasses.length) {
+      el.innerHTML = `<div class="pass-hdr">NEXT VISIBLE PASS</div>
+        <div style="font-family:var(--mono);font-size:0.52rem;color:var(--dim)">NO VISIBLE PASSES IN NEXT 5 DAYS</div>
+        <button class="loc-btn" onclick="fetchPassPredictions()" style="margin-top:6px">↻ RECALCULATE</button>`;
+      return;
+    }
+    renderPassCountdown();
+    if (passCountdownTimer) clearInterval(passCountdownTimer);
+    passCountdownTimer = setInterval(renderPassCountdown, 1000);
+    sysLog(`PASS PREDICTION: NEXT PASS ${nextPasses[0].start.toLocaleString()}`, 'ok');
+
+    // If we're already inside an alert window on load (e.g. page refreshed mid-countdown), show it now
+    const pass = nextPasses[0];
+    const secsToStart = (pass.start - new Date()) / 1000;
+    if (secsToStart > 0 && secsToStart <= 1800) {
+      pass._alerted30 = true;
+      if (secsToStart <= 300) pass._alerted5 = true;
+      firePassAlert(pass, secsToStart);
+    }
+  } catch(e) {
+    el.innerHTML = `<div class="pass-hdr">NEXT VISIBLE PASS</div>
+      <div style="font-family:var(--mono);font-size:0.52rem;color:var(--red)">⚠ ORBIT CALCULATION FAILED</div>
+      <button class="loc-btn" onclick="fetchPassPredictions()" style="margin-top:6px">↻ RETRY</button>`;
+    sysLog('PASS PREDICTION ERROR: ' + e.message, 'warn');
+  }
+}
+
+function renderPassCountdown() {
+  const el = getPassSection();
+  if (!el || !nextPasses.length) return;
+
+  const now  = new Date();
+  const pass = nextPasses[0];
+  const secsToStart = (pass.start - now) / 1000;
+  const secsToEnd   = (pass.end   - now) / 1000;
+
+  const elevColor = pass.maxElev >= 45 ? 'var(--green)' : pass.maxElev >= 20 ? 'var(--amber)' : 'var(--red)';
+  const elevLabel = pass.maxElev >= 45 ? 'EXCELLENT — NAKED EYE' : pass.maxElev >= 20 ? 'GOOD VISIBILITY' : 'LOW PASS';
+  const elevClass = pass.maxElev >= 45 ? 'elev-great' : pass.maxElev >= 20 ? 'elev-good' : 'elev-poor';
+  const durationSec = (pass.end - pass.start) / 1000;
+
+  let countdownText, countdownColor;
+  if (secsToStart > 0) {
+    const h = Math.floor(secsToStart/3600), m = Math.floor((secsToStart%3600)/60), s = Math.floor(secsToStart%60);
+    countdownText  = h > 0 ? `${h}H ${String(m).padStart(2,'0')}M ${String(s).padStart(2,'0')}S` : `${String(m).padStart(2,'0')}M ${String(s).padStart(2,'0')}S`;
+    countdownColor = secsToStart < 300 ? 'var(--green)' : secsToStart < 1800 ? 'var(--amber)' : 'var(--accent)';
+
+    // Fire alerts — use <= threshold with a flag so it only fires once per tier,
+    // robust to timer drift or backgrounded tabs (no longer requires hitting an exact 1s window)
+    if (secsToStart <= 1800 && !pass._alerted30) { pass._alerted30 = true; firePassAlert(pass, secsToStart); }
+    if (secsToStart <= 300  && !pass._alerted5)  { pass._alerted5  = true; firePassAlert(pass, secsToStart); }
+  } else if (secsToEnd > 0) {
+    countdownText  = '🛰 OVERHEAD NOW — LOOK ' + azToCompass(pass.azStart) + '!';
+    countdownColor = 'var(--green)';
+  } else {
+    countdownText  = 'PASS COMPLETE';
+    countdownColor = 'var(--dim)';
+    // Move to next pass after a short delay
+    if (!pass._advanced) {
+      pass._advanced = true;
+      setTimeout(() => { nextPasses.shift(); if (nextPasses.length) renderPassCountdown(); else fetchPassPredictions(); }, 3000);
+    }
+  }
+
+  const locStr = `${Math.abs(userLat).toFixed(2)}°${userLat>=0?'N':'S'} ${Math.abs(userLon).toFixed(2)}°${userLon>=0?'E':'W'}`;
+
+  el.innerHTML = `
+    <div class="pass-hdr"><span>NEXT VISIBLE PASS</span><span class="pass-loc">📍 ${locStr}</span></div>
+    <div class="pass-countdown" style="color:${countdownColor}">${countdownText}</div>
+    <div class="pass-row"><span class="pass-lbl">RISE TIME</span><span class="pass-val">${pass.start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} · ${azToCompass(pass.azStart)}</span></div>
+    <div class="pass-row"><span class="pass-lbl">MAX ELEVATION</span><span class="pass-val" style="color:${elevColor}">${Math.round(pass.maxElev)}° — ${elevLabel}</span></div>
+    <div class="pass-elev-bar"><div class="pass-elev-fill ${elevClass}" style="width:${Math.min(100,(pass.maxElev/90)*100)}%"></div></div>
+    <div class="pass-row" style="margin-top:3px"><span class="pass-lbl">SETS</span><span class="pass-val">${pass.end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} · ${azToCompass(pass.azEnd)}</span></div>
+    <div class="pass-row" style="border:none"><span class="pass-lbl">DURATION</span><span class="pass-val">${Math.round(durationSec)}S</span></div>
+    ${nextPasses[1] ? `<div class="pass-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px"><span class="pass-lbl">FOLLOWED BY</span><span class="pass-val">${nextPasses[1].start.toLocaleDateString('en-US',{weekday:'short'})} ${nextPasses[1].start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>` : ''}
+    <button class="loc-btn" onclick="fetchPassPredictions()" style="margin-top:6px">↻ RECALCULATE</button>`;
+}
+
+function appendLocationRow() {
+  // Show user coords as a dedicated row in the ISS panel
+  const existing = document.getElementById('user-loc-row');
+  if (existing) existing.remove();
+  if (userLat === null) return;
+  const locStr = `${Math.abs(userLat).toFixed(4)}°${userLat>=0?'N':'S'}  ${Math.abs(userLon).toFixed(4)}°${userLon>=0?'E':'W'}`;
+  const row = document.createElement('div');
+  row.id = 'user-loc-row';
+  row.className = 'irow';
+  row.innerHTML = `<span class="ilbl">YOUR LOCATION</span><span class="ival" style="color:var(--accent)">${locStr}</span>`;
+  // Insert before the refresh button
+  const rbtn = document.querySelector('#iss-body .rbtn');
+  if (rbtn) rbtn.insertAdjacentElement('beforebegin', row);
+}
+
+function firePassAlert(pass, secsAway) {
+  const mins  = Math.round(secsAway/60);
+  const elev  = Math.round(pass.maxElev || 0);
+  const vis   = elev>=45?'EXCELLENT — NAKED EYE VISIBLE':elev>=20?'GOOD VISIBILITY':'LOW PASS — MAY BE FAINT';
+  const dir   = azToCompass(pass.azStart);
+  document.getElementById('alert-body').innerHTML =
+    `RISE IN ${mins} MINUTE${mins!==1?'S':''} AT ${pass.start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} · LOOK ${dir}<br>` +
+    `MAX ELEVATION: ${elev}° — ${vis}<br>` +
+    `OPEN SKY GUIDE TO TRACK`;
+  document.getElementById('pass-alert').classList.add('visible');
+  sysLog(`⚠ ISS PASS IN ${mins} MIN — ELEV ${elev}°`,'warn');
+}
+
+// ── AURORA FORECAST ───────────────────────
+async function fetchAurora() {
+  const el = document.getElementById('aurora-body');
+  if (!el) return;
+  try {
+    // NOAA OVATION aurora forecast — 30-minute outlook, global grid
+    const r = await fetch('https://services.swpc.noaa.gov/json/ovation_aurora_latest.json');
+    if (!r.ok) throw new Error('aurora api ' + r.status);
+    const data = await r.json();
+
+    // data.coordinates is an array of [lon, lat, aurora_probability]
+    // Find probability at user location (or nearest point)
+    let prob = 0;
+    if (userLat !== null && data.coordinates) {
+      let minDist = Infinity;
+      data.coordinates.forEach(([lon, lat, p]) => {
+        const d = Math.abs(lat - userLat) + Math.abs(lon - userLon);
+        if (d < minDist) { minDist = d; prob = p; }
+      });
+    }
+
+    // Also get the observation time
+    const obsTime = data['Observation Time'] || data.Forecast_Time || '—';
+
+    // Kp needed for aurora at this latitude
+    // Rough formula: Kp needed ≈ (90 - |lat|) / 8
+    const kpNeeded = userLat !== null
+      ? Math.max(0, ((90 - Math.abs(userLat)) / 8)).toFixed(1)
+      : null;
+
+    // Current Kp from space weather (stored globally)
+    const curKp = window.currentKp || null;
+    const kpDiff = (curKp !== null && kpNeeded !== null)
+      ? (curKp - parseFloat(kpNeeded)).toFixed(1)
+      : null;
+
+    // Color based on probability
+    const color = prob >= 50 ? 'var(--green)' :
+                  prob >= 20 ? 'var(--amber)' :
+                  prob >= 5  ? '#7986cb'      : 'var(--dim)';
+
+    const verdict = prob >= 50 ? 'HIGH ACTIVITY — GO OUTSIDE!' :
+                    prob >= 20 ? 'MODERATE — WATCH NORTHERN SKY' :
+                    prob >= 5  ? 'LOW — POSSIBLE AT HORIZON' :
+                                 'UNLIKELY AT YOUR LATITUDE';
+
+    const kpStatus = kpNeeded
+      ? (curKp !== null
+          ? (parseFloat(kpDiff) >= 0
+              ? `<span style="color:var(--green)">KP ${curKp} EXCEEDS THRESHOLD ✓</span>`
+              : `<span style="color:var(--dim)">NEED KP ${kpNeeded} — CURRENTLY ${curKp} (${kpDiff})</span>`)
+          : `<span style="color:var(--dim)">NEED KP ${kpNeeded} FOR YOUR LAT</span>`)
+      : '<span style="color:var(--dim)">ENABLE LOCATION FOR KP THRESHOLD</span>';
+
+    const locLine = userLat !== null
+      ? `${Math.abs(userLat).toFixed(1)}°${userLat>=0?'N':'S'}`
+      : 'LOCATION UNKNOWN';
+
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;">
+        <div style="flex:1">
+          <div class="aurora-label">AURORA PROBABILITY · ${locLine}</div>
+          <div class="aurora-pct" style="color:${color};font-size:2rem;margin:4px 0">${prob}%</div>
+          <div class="aurora-verdict" style="color:${color}">${verdict}</div>
+          <div class="aurora-meter" style="margin-top:8px"><div class="aurora-fill" style="width:${Math.min(100,prob)}%;background:${color}"></div></div>
+        </div>
+        <div style="flex-shrink:0">
+          <svg viewBox="0 0 100 100" width="90" height="90">
+            <circle cx="50" cy="50" r="42" fill="rgba(0,20,40,0.5)" stroke="var(--border)" stroke-width="5"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="${color}" stroke-width="5"
+              stroke-dasharray="${(prob/100)*264} 264"
+              stroke-dashoffset="66"
+              stroke-linecap="round"
+              style="transition:stroke-dasharray 1.2s ease;opacity:0.85"/>
+            <text x="50" y="46" text-anchor="middle" font-family="Orbitron,monospace"
+              font-size="18" font-weight="900" fill="${color}">${prob}%</text>
+            <text x="50" y="62" text-anchor="middle" font-family="Share Tech Mono,monospace"
+              font-size="7" fill="rgba(160,200,224,0.6)" letter-spacing="1">PROBABILITY</text>
+          </svg>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <div class="pass-row"><span class="pass-lbl">KP THRESHOLD</span><span class="pass-val">${kpNeeded||'—'}</span></div>
+        <div class="pass-row" style="border:none"><span class="pass-lbl">STATUS</span><span class="pass-val">${kpStatus}</span></div>
+      </div>
+      <div style="margin-top:8px;font-family:var(--mono);font-size:0.44rem;color:var(--dim);letter-spacing:0.06em">
+        FORECAST: ${typeof obsTime === 'string' ? obsTime.replace('T',' ').split('.')[0]+' UTC' : '—'}
+      </div>`;
+
+    const tag = document.getElementById('aurora-tag');
+    if (tag) { tag.textContent = prob >= 20 ? `⚡ ${prob}% ACTIVE` : `${prob}% · NOAA OVATION`; tag.style.color = prob >= 20 ? 'var(--green)' : ''; }
+    sysLog(`AURORA FORECAST: ${prob}% AT YOUR LOCATION`, prob >= 20 ? 'warn' : 'ok');
+  } catch(e) {
+    if (el) el.innerHTML = `<div style="font-family:var(--mono);font-size:0.55rem;color:var(--red);padding:8px">⚠ AURORA DATA UNAVAILABLE</div>`;
+    sysLog('AURORA FETCH ERROR: ' + e.message,'warn');
+  }
+}
+
+
+// ── MOON PHASE ─────────────────────────────────────────
+function calcMoonPhase() {
+  const now    = new Date();
+  const known  = new Date('2000-01-06T18:14:00Z'); // known new moon
+  const period = 29.530588853;                       // synodic period in days
+  const diff   = (now - known) / (1000 * 60 * 60 * 24);
+  const age    = ((diff % period) + period) % period; // days since new moon
+  const illum  = 0.5 * (1 - Math.cos((age / period) * 2 * Math.PI));
+
+  const phases = [
+    { name: 'NEW MOON',        min: 0,    max: 1.85  },
+    { name: 'WAXING CRESCENT', min: 1.85, max: 7.38  },
+    { name: 'FIRST QUARTER',   min: 7.38, max: 11.08 },
+    { name: 'WAXING GIBBOUS',  min: 11.08,max: 14.77 },
+    { name: 'FULL MOON',       min: 14.77,max: 16.62 },
+    { name: 'WANING GIBBOUS',  min: 16.62,max: 22.15 },
+    { name: 'LAST QUARTER',    min: 22.15,max: 25.85 },
+    { name: 'WANING CRESCENT', min: 25.85,max: 29.53 },
+  ];
+  const phase = phases.find(p => age >= p.min && age < p.max) || phases[0];
+
+  document.getElementById('moon-name').textContent  = phase.name;
+  document.getElementById('moon-illum').textContent = `${(illum*100).toFixed(0)}% ILLUMINATED`;
+  document.getElementById('moon-age').textContent   = `DAY ${Math.floor(age)} OF CYCLE`;
+
+  // Draw moon on canvas
+  const canvas = document.getElementById('moon-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, r = 28;
+  ctx.clearRect(0, 0, W, H);
+
+  // Shadow side
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.fillStyle = '#0a1a2a'; ctx.fill();
+  ctx.strokeStyle = 'rgba(0,212,255,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+
+  // Lit side — ellipse width based on illumination and phase
+  const waxing = age < 14.77;
+  const litWidth = r * Math.abs(Math.cos((age / period) * 2 * Math.PI));
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI/2, -Math.PI/2); // right half
+  ctx.closePath(); ctx.clip();
+  ctx.fillStyle = '#c8d8e8'; ctx.fill();
+  ctx.restore();
+
+  // Dark overlay on lit side based on phase
+  ctx.save();
+  ctx.beginPath();
+  if (waxing) {
+    // Waxing: dark on left, light on right
+    ctx.arc(cx, cy, r, Math.PI/2, -Math.PI/2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, litWidth, r, 0, 0, Math.PI*2);
+    ctx.fillStyle = '#0a1a2a'; ctx.fill();
+  } else {
+    // Waning: dark on right
+    ctx.arc(cx, cy, r, -Math.PI/2, Math.PI/2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, litWidth, r, 0, 0, Math.PI*2);
+    ctx.fillStyle = '#c8d8e8'; ctx.fill();
+  }
+  ctx.restore();
+
+  // Glow if full moon
+  if (age > 13 && age < 16) {
+    ctx.beginPath(); ctx.arc(cx, cy, r+4, 0, Math.PI*2);
+    const g = ctx.createRadialGradient(cx,cy,r,cx,cy,r+8);
+    g.addColorStop(0,'rgba(200,220,240,0.15)');
+    g.addColorStop(1,'rgba(200,220,240,0)');
+    ctx.fillStyle = g; ctx.fill();
+  }
+}
+
+// ── SOLAR FLARES ────────────────────────────────────────
+async function fetchFlares() {
+  const el = document.getElementById('flare-body');
+  if (!el) return;
+  try {
+    // NOAA X-ray flux — last 6 hours, 1-minute data
+    const r = await fetch('https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json');
+    if (!r.ok) throw new Error('xray api');
+    const raw = await r.json();
+    if (!raw || !raw.length) throw new Error('empty');
+
+    // Get latest flux reading (short channel = 0.1-0.8nm, flare indicator)
+    const recent = raw.slice(-60); // last 60 minutes
+    const latest = raw[raw.length-1];
+    const flux   = parseFloat(latest.flux || latest.current_int_xrss || 0);
+
+    // Classify flux level
+    // A < 1e-7, B < 1e-6, C < 1e-5, M < 1e-4, X >= 1e-4
+    function classifyFlux(f) {
+      if (f >= 1e-4) return { cls:'X', color:'var(--red)',   label:'X-CLASS — MAJOR FLARE' };
+      if (f >= 1e-5) return { cls:'M', color:'var(--amber)', label:'M-CLASS — MODERATE FLARE' };
+      if (f >= 1e-6) return { cls:'C', color:'var(--textbr)',label:'C-CLASS — MINOR FLARE' };
+      if (f >= 1e-7) return { cls:'B', color:'var(--dim)',   label:'B-CLASS — BACKGROUND' };
+      return               { cls:'A', color:'var(--dim)',   label:'A-CLASS — QUIET' };
+    }
+
+    const info = classifyFlux(flux);
+    const peak = raw.reduce((max, d) => Math.max(max, parseFloat(d.flux||0)), 0);
+    const peakInfo = classifyFlux(peak);
+
+    // Mini sparkline of last 60 min
+    const vals = recent.map(d => parseFloat(d.flux||0));
+    const maxV = Math.max(...vals, 1e-8);
+    const bars = vals.filter((_,i) => i % 4 === 0).map(v => {
+      const pct = Math.min(100, (Math.log10(v/1e-9) / Math.log10(maxV/1e-9)) * 100);
+      const fi  = classifyFlux(v);
+      return `<div style="flex:1;background:var(--border);height:24px;position:relative;overflow:hidden">
+        <div style="position:absolute;bottom:0;width:100%;height:${Math.max(2,pct)}%;background:${fi.color};opacity:0.7"></div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div style="display:flex;gap:2px;align-items:flex-end;height:28px;margin-bottom:8px">${bars}</div>
+      <div style="font-family:var(--display);font-size:1.1rem;font-weight:900;color:${info.color};letter-spacing:0.05em">${info.cls}</div>
+      <div style="font-family:var(--mono);font-size:0.5rem;color:${info.color};letter-spacing:0.08em;margin-top:2px">${info.label}</div>
+      <div style="font-family:var(--mono);font-size:0.48rem;color:var(--dim);margin-top:6px">
+        FLUX: ${flux.toExponential(1)} W/m²<br>
+        60-MIN PEAK: ${peakInfo.cls}-CLASS
+      </div>`;
+    sysLog(`SOLAR XRAY: ${info.cls}-CLASS FLUX`, flux >= 1e-5 ? 'warn' : 'ok');
+  } catch(e) {
+    if(el) el.innerHTML = `<div style="font-family:var(--mono);font-size:0.52rem;color:var(--dim)">XRAY DATA UNAVAILABLE</div>`;
+    sysLog('SOLAR FLARE FEED ERROR','warn');
+  }
+}
+
+// ── VOYAGER DISTANCES ────────────────────────────────────
+function calcVoyager() {
+  const el = document.getElementById('voyager-body');
+  if (!el) return;
+
+  // Voyager 1 launched 1977-09-05, Voyager 2 launched 1977-08-20
+  // Known distances at a reference date from NASA Horizons, then extrapolate
+  // Voyager 1: ~23.3 AU/year, Voyager 2: ~19.9 AU/year (approximate)
+  // Reference: Jan 1, 2024 — V1: ~162.3 AU, V2: ~135.2 AU
+  const REF    = new Date('2024-01-01T00:00:00Z');
+  const now    = new Date();
+  const years  = (now - REF) / (1000 * 60 * 60 * 24 * 365.25);
+
+  const v1AU   = 162.3 + 3.595 * years;  // AU
+  const v2AU   = 135.2 + 3.028 * years;
+
+  const AU_KM  = 149597870.7;
+  const C_KMS  = 299792.458; // speed of light km/s
+
+  const v1Km   = v1AU * AU_KM;
+  const v2Km   = v2AU * AU_KM;
+  const v1Delay = v1Km / C_KMS / 3600; // hours
+  const v2Delay = v2Km / C_KMS / 3600;
+
+  function fmtAU(au) { return au.toFixed(2) + ' AU'; }
+  function fmtDelay(h) {
+    const hrs = Math.floor(h), mins = Math.round((h-hrs)*60);
+    return `${hrs}H ${mins}M SIGNAL DELAY`;
+  }
+
+  el.innerHTML = `
+    <a class="voyager-link" href="https://science.nasa.gov/mission/voyager-1/" target="_blank" rel="noopener noreferrer" style="margin-bottom:10px">
+      <div style="font-family:var(--display);font-size:0.6rem;font-weight:600;color:var(--accent);letter-spacing:0.08em">VOYAGER 1</div>
+      <div style="font-family:var(--display);font-size:0.85rem;font-weight:600;color:var(--white);margin:3px 0">${fmtAU(v1AU)}</div>
+      <div style="font-family:var(--mono);font-size:0.48rem;color:var(--dim)">${fmtDelay(v1Delay)}</div>
+      <div style="font-family:var(--mono);font-size:0.45rem;color:var(--green2);margin-top:2px">INTERSTELLAR SPACE</div>
+    </a>
+    <a class="voyager-link" href="https://science.nasa.gov/mission/voyager-2/" target="_blank" rel="noopener noreferrer">
+      <div style="font-family:var(--display);font-size:0.6rem;font-weight:600;color:var(--accent2);letter-spacing:0.08em">VOYAGER 2</div>
+      <div style="font-family:var(--display);font-size:0.85rem;font-weight:600;color:var(--white);margin:3px 0">${fmtAU(v2AU)}</div>
+      <div style="font-family:var(--mono);font-size:0.48rem;color:var(--dim)">${fmtDelay(v2Delay)}</div>
+      <div style="font-family:var(--mono);font-size:0.45rem;color:var(--green2);margin-top:2px">INTERSTELLAR SPACE</div>
+    </a>`;
+  sysLog(`VOYAGER: V1=${fmtAU(v1AU)} V2=${fmtAU(v2AU)}`,'ok');
+}
+
+// ── SPACE DEBRIS ────────────────────────────────────────
+function renderDebris() {
+  const el = document.getElementById('debris-body');
+  if (!el) return;
+
+  // ESA/LeoLabs published figures — updated periodically, hardcoded accurately
+  // Source: ESA Space Environment Report 2024
+  const stats = [
+    { label: 'TRACKED OBJECTS',   val: '35,160',  color: 'var(--textbr)', note: 'RADAR TRACKED' },
+    { label: 'FRAGMENTATION DEB', val: '23,540',  color: 'var(--amber)',  note: '>10CM' },
+    { label: 'DEFUNCT SATS',      val: '3,280',   color: 'var(--red)',    note: 'IN ORBIT' },
+    { label: 'ESTIMATED TOTAL',   val: '~1,000,000', color: 'var(--dim)', note: '>1CM ESTIMATED' },
+  ];
+
+  el.innerHTML = stats.map(s => `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-family:var(--mono);font-size:0.48rem;color:var(--dim);letter-spacing:0.08em">${s.label}</div>
+        <div style="font-family:var(--mono);font-size:0.42rem;color:var(--dim)">${s.note}</div>
+      </div>
+      <div style="font-family:var(--display);font-size:0.7rem;font-weight:600;color:${s.color}">${s.val}</div>
+    </div>`).join('');
+  sysLog('ORBITAL DEBRIS STATS LOADED','ok');
+}
+
+// ── SKY EVENTS — Astronomy Engine ────────────────────────
+// Meteor showers — fixed calendar (dates don't change year to year)
+const METEOR_SHOWERS = [
+  { name:'Quadrantids',   peak:'Jan 03', zhr:120, radiant:'BOOTES'        },
+  { name:'Lyrids',        peak:'Apr 22', zhr:20,  radiant:'LYRA'          },
+  { name:'Eta Aquariids', peak:'May 06', zhr:60,  radiant:'AQUARIUS'      },
+  { name:'Delta Aquariids',peak:'Jul 30',zhr:25,  radiant:'AQUARIUS'      },
+  { name:'Perseids',      peak:'Aug 12', zhr:100, radiant:'PERSEUS'       },
+  { name:'Draconids',     peak:'Oct 08', zhr:10,  radiant:'DRACO'         },
+  { name:'Orionids',      peak:'Oct 21', zhr:25,  radiant:'ORION'         },
+  { name:'Leonids',       peak:'Nov 17', zhr:15,  radiant:'LEO'           },
+  { name:'Geminids',      peak:'Dec 13', zhr:150, radiant:'GEMINI'        },
+  { name:'Ursids',        peak:'Dec 22', zhr:10,  radiant:'URSA MINOR'    },
+];
+
+// Location-aware "what's actually visible tonight" pages — more useful than a static encyclopedia article.
+function tadUrl(kind) {
+  const base = kind === 'moon' ? 'https://www.timeanddate.com/moon/' : 'https://www.timeanddate.com/astronomy/night/';
+  return userLat !== null ? `${base}@${userLat.toFixed(4)},${userLon.toFixed(4)}` : base;
+}
+
+function daysUntil(dateStr) {
+  const now   = new Date();
+  const year  = now.getFullYear();
+  const d     = new Date(`${dateStr} ${year}`);
+  if (d < now) d.setFullYear(year + 1);
+  return Math.round((d - now) / 86400000);
+}
+
+function fmtDaysAway(days) {
+  if (days === 0) return 'TONIGHT';
+  if (days === 1) return 'TOMORROW';
+  if (days < 7)  return `IN ${days} DAYS`;
+  if (days < 30) return `IN ${Math.round(days/7)} WEEKS`;
+  return `IN ${Math.round(days/30)} MONTHS`;
+}
+
+async function calcSkyEvents() {
+  const el = document.getElementById('sky-body');
+  if (!el) return;
+
+  // Wait for Astronomy Engine to load
+  if (typeof Astronomy === 'undefined') {
+    setTimeout(calcSkyEvents, 500);
+    return;
+  }
+
+  const events = [];
+  const now    = new Date();
+  const obs    = (userLat !== null)
+    ? new Astronomy.Observer(userLat, userLon, 0)
+    : new Astronomy.Observer(33.0, -97.0, 0); // default to NRH
+
+  // ── 1. Moon phase transitions (next 4) ──
+  const phaseNames = ['NEW MOON','FIRST QUARTER','FULL MOON','LAST QUARTER'];
+  let phaseSearch  = new Date(now);
+  for (let p = 0; p < 4; p++) {
+    try {
+      const result = Astronomy.SearchMoonPhase(p * 90, phaseSearch, 40);
+      if (result) {
+        const days = (result.date - now) / 86400000;
+        if (days >= -0.5 && days < 60) {
+          const icons = ['🌑','🌓','🌕','🌗'];
+          events.push({
+            date:  result.date,
+            days:  Math.round(days),
+            icon:  icons[p],
+            title: phaseNames[p],
+            desc:  '',
+            type:  'moon',
+            color: 'var(--white)',
+            link:  tadUrl('moon')
+          });
+        }
+        phaseSearch = new Date(result.date.getTime() + 86400000 * 2);
+      }
+    } catch(e) {}
+  }
+
+  // ── 2. Planet conjunctions & oppositions ──
+  const bodies = ['Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune'];
+  for (const bodyName of bodies) {
+    try {
+      const body = Astronomy.Body[bodyName];
+
+      // Conjunction (same RA as Sun — not visible, but notable)
+      const conj = Astronomy.SearchRelativeLongitude(body, 0, now);
+      if (conj) {
+        const days = (conj.date - now) / 86400000;
+        if (days >= 0 && days < 90) {
+          events.push({
+            date:  conj.date,
+            days:  Math.round(days),
+            icon:  '☀️',
+            title: `${bodyName.toUpperCase()} CONJUNCTION`,
+            desc:  'PASSES BEHIND SUN',
+            type:  'conjunction',
+            color: 'var(--amber)',
+            link:  tadUrl('night')
+          });
+        }
+      }
+
+      // Opposition (180° from Sun — best visibility, outer planets only)
+      if (!['Mercury','Venus'].includes(bodyName)) {
+        const opp = Astronomy.SearchRelativeLongitude(body, 180, now);
+        if (opp) {
+          const days = (opp.date - now) / 86400000;
+          if (days >= 0 && days < 365) {
+            events.push({
+              date:  opp.date,
+              days:  Math.round(days),
+              icon:  '🔭',
+              title: `${bodyName.toUpperCase()} AT OPPOSITION`,
+              desc:  'CLOSEST APPROACH · BEST VIEWING',
+              type:  'opposition',
+              color: 'var(--green)',
+              link:  tadUrl('night')
+            });
+          }
+        }
+      }
+
+      // Greatest elongation (Mercury/Venus — best naked eye viewing)
+      if (['Mercury','Venus'].includes(bodyName)) {
+        try {
+          const elong = Astronomy.Elongation(body, now);
+          if (elong) {
+            const edays = (elong.time.date - now) / 86400000;
+            if (edays >= 0 && edays < 120) {
+              events.push({
+                date:  elong.time.date,
+                days:  Math.round(edays),
+                icon:  bodyName === 'Venus' ? '✨' : '⚪',
+                title: `${bodyName.toUpperCase()} GREATEST ELONGATION`,
+                desc:  `${elong.elongation.toFixed(1)}° FROM SUN · BEST VISIBILITY`,
+                type:  'elongation',
+                color: 'var(--accent)',
+                link:  tadUrl('night')
+              });
+            }
+          }
+        } catch(e) {}
+      }
+
+    } catch(e) {}
+  }
+
+  // ── 3. Moon-planet conjunctions ──
+  for (const bodyName of ['Venus','Mars','Jupiter','Saturn']) {
+    try {
+      const body       = Astronomy.Body[bodyName];
+      const moonConj   = Astronomy.SearchRelativeLongitude(Astronomy.Body.Moon, 0, now);
+      // Use angular separation to find close approaches
+      // Search over next 60 days in 1-day steps
+      for (let d = 0; d < 60; d++) {
+        const t   = new Date(now.getTime() + d * 86400000);
+        const ast = Astronomy.AstroTime(t);
+        try {
+          const moonPos   = Astronomy.GeoVector(Astronomy.Body.Moon, ast, false);
+          const planetPos = Astronomy.GeoVector(body, ast, false);
+          const moonEq    = Astronomy.EquatorFromVector(moonPos);
+          const planEq    = Astronomy.EquatorFromVector(planetPos);
+          const sep       = Math.abs(moonEq.ra - planEq.ra) * 15; // rough deg
+          const latSep    = Math.abs(moonEq.dec - planEq.dec);
+          const totalSep  = Math.sqrt(sep*sep + latSep*latSep);
+          if (totalSep < 5 && (d === 0 || totalSep < 3)) {
+            events.push({
+              date:  t,
+              days:  d,
+              icon:  '🌙',
+              title: `MOON NEAR ${bodyName.toUpperCase()}`,
+              desc:  `${totalSep.toFixed(1)}° SEPARATION`,
+              type:  'moonplanet',
+              color: 'var(--accent2)',
+              link:  tadUrl('night')
+            });
+            break; // one per planet
+          }
+        } catch(e) {}
+      }
+    } catch(e) {}
+  }
+
+  // ── 4. Meteor showers ──
+  METEOR_SHOWERS.forEach(shower => {
+    const days = daysUntil(shower.peak);
+    if (days >= 0 && days < 30) {
+      events.push({
+        date:  null,
+        days:  days,
+        icon:  '🌠',
+        title: `${shower.name.toUpperCase()} METEOR SHOWER`,
+        desc:  `PEAK ${shower.zhr} METEORS/HR · RADIANT: ${shower.radiant}`,
+        type:  'meteor',
+        color: 'var(--ltblue)',
+        link:  'https://www.amsmeteors.org/meteor-showers/meteor-shower-calendar/'
+      });
+    }
+  });
+
+  // ── Sort by date ──
+  events.sort((a,b) => a.days - b.days);
+
+  if (!events.length) {
+    el.innerHTML = `<div style="font-family:var(--mono);font-size:0.6rem;color:var(--dim);padding:8px">NO MAJOR EVENTS IN NEXT 30 DAYS</div>`;
+    return;
+  }
+
+  // ── Render ──
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">
+      ${events.slice(0,12).map(ev => `
+        <a class="sky-event-card" href="${escapeHtml(ev.link)}" target="_blank" rel="noopener noreferrer" style="border-left:3px solid ${ev.color}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:1.1rem">${ev.icon}</span>
+            <span style="font-family:var(--display);font-size:0.55rem;font-weight:600;color:${ev.color};letter-spacing:0.08em">${ev.title}</span>
+          </div>
+          ${ev.desc ? `<div style="font-family:var(--mono);font-size:0.48rem;color:var(--dim);margin-bottom:4px;letter-spacing:0.06em">${ev.desc}</div>` : ''}
+          <div style="font-family:var(--display);font-size:0.62rem;font-weight:600;color:${ev.days===0?'var(--green)':ev.days<=3?'var(--amber)':'var(--textbr)'}">
+            ${fmtDaysAway(ev.days)}
+            ${ev.date ? `<span style="font-family:var(--mono);font-size:0.45rem;color:var(--dim);font-weight:400;margin-left:6px">${ev.date.toLocaleDateString('en-US',{month:'short',day:'numeric'}).toUpperCase()}</span>` : ''}
+          </div>
+        </a>`).join('')}
+    </div>`;
+
+  // Update moon phase with Astronomy Engine (more accurate than our manual calc)
+  try {
+    const moonIllum = Astronomy.Illumination(Astronomy.Body.Moon, Astronomy.AstroTime(now));
+    const phaseDeg  = moonIllum.phase_angle;
+    const illumPct  = Math.round(moonIllum.phase_fraction * 100);
+    const age       = moonIllum.phase_fraction * 29.53;
+    document.getElementById('moon-illum').textContent = `${illumPct}% ILLUMINATED`;
+    document.getElementById('moon-age').textContent   = `DAY ${Math.floor(age)} OF CYCLE`;
+  } catch(e) {}
+
+  sysLog(`SKY EVENTS: ${events.length} UPCOMING CALCULATED`,'ok');
+  document.getElementById('sky-tag').textContent = `${events.length} EVENTS · ASTRONOMY ENGINE`;
+}
+
+// ── 3D GLOBE ──────────────────────────────────────────
+let globeScene, globeCamera, globeRenderer, globeControls;
+let globeEarth, globeISS, globeUserMarker, globeUserRing, globeOrbitLine, globeAnimFrame;
+let globeInitialized = false;
+let currentMapView = '2d';
+
+function setMapView(view) {
+  currentMapView = view;
+  document.getElementById('btn-view-2d').classList.toggle('active', view === '2d');
+  document.getElementById('btn-view-web').classList.toggle('active', view === 'web');
+  document.getElementById('btn-view-3d').classList.toggle('active', view === '3d');
+  document.getElementById('iss-map').style.display = (view === '2d' || view === 'web') ? 'block' : 'none';
+  document.getElementById('globe-container').style.display = view === '3d' ? 'block' : 'none';
+
+  if (view === '3d') {
+    if (!globeInitialized) initGlobe();
+    else {
+      // Resize in case container was hidden during resize
+      onGlobeResize();
+    }
+    const latest = issTrack.length ? issTrack[issTrack.length-1] : null;
+    if (latest) updateGlobeISS(latest.lat, latest.lon);
+  } else if (view === 'web') {
+    const latest = issTrack.length ? issTrack[issTrack.length-1] : null;
+    if (latest) drawOrbitWeb(latest.lat, latest.lon);
+    else drawOrbitWeb(null, null);
+  } else {
+    const latest = issTrack.length ? issTrack[issTrack.length-1] : null;
+    if (latest) updateMap(latest.lat, latest.lon);
+    else drawMap(null, null);
+  }
+}
+
+function latLonToVec3(lat, lon, radius) {
+  const phi   = (90 - lat) * (Math.PI / 180);
+  const theta = (lon + 180) * (Math.PI / 180);
+  return new THREE.Vector3(
+    -radius * Math.sin(phi) * Math.cos(theta),
+     radius * Math.cos(phi),
+     radius * Math.sin(phi) * Math.sin(theta)
+  );
+}
+
+function addGlobeUserMarker() {
+  if (!globeScene || userLat === null) return;
+  // Remove existing marker if present
+  if (globeUserMarker) {
+    globeScene.remove(globeUserMarker);
+    globeUserMarker = null;
+  }
+  if (globeUserRing) {
+    globeScene.remove(globeUserRing);
+    globeUserRing = null;
+  }
+
+  const userGeo = new THREE.SphereGeometry(0.05, 16, 16);
+  const userMat = new THREE.MeshBasicMaterial({ color: 0x00d4ff });
+  globeUserMarker = new THREE.Mesh(userGeo, userMat);
+  const pos = latLonToVec3(userLat, userLon, 2.55);
+  globeUserMarker.position.copy(pos);
+  globeScene.add(globeUserMarker);
+
+  // Pulse ring
+  const ringGeo = new THREE.RingGeometry(0.06, 0.09, 32);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+  globeUserRing = new THREE.Mesh(ringGeo, ringMat);
+  globeUserRing.position.copy(pos);
+  globeUserRing.lookAt(0,0,0);
+  globeScene.add(globeUserRing);
+}
+
+function initGlobe() {
+  const container = document.getElementById('globe-container');
+  if (!container || typeof THREE === 'undefined') {
+    setTimeout(initGlobe, 300);
+    return;
+  }
+
+  const W = container.clientWidth  || 800;
+  const H = container.clientHeight || 420;
+
+  globeScene = new THREE.Scene();
+  globeCamera = new THREE.PerspectiveCamera(45, W/H, 0.1, 1000);
+  globeCamera.position.set(0, 0, 7);
+
+  globeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  globeRenderer.setSize(W, H);
+  globeRenderer.setPixelRatio(window.devicePixelRatio || 1);
+  container.innerHTML = '';
+  container.appendChild(globeRenderer.domElement);
+
+  // ── Earth sphere ──
+  const earthGeo = new THREE.SphereGeometry(2.5, 64, 64);
+
+  // Procedural earth-like material using vertex colors based on a simple texture
+  // Load earth texture from CDN
+  const loader = new THREE.TextureLoader();
+  const earthTexture = loader.load(
+    'https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg',
+    () => { /* loaded */ },
+    undefined,
+    () => {
+      // Fallback: solid color material if texture fails
+      globeEarth.material = new THREE.MeshPhongMaterial({ color: 0x0a2a4a, shininess: 5 });
+    }
+  );
+
+  const earthMat = new THREE.MeshPhongMaterial({
+    map: earthTexture,
+    shininess: 5,
+  });
+  globeEarth = new THREE.Mesh(earthGeo, earthMat);
+  globeScene.add(globeEarth);
+
+  // ── Atmosphere glow ──
+  const glowGeo = new THREE.SphereGeometry(2.58, 64, 64);
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: 0x00d4ff, transparent: true, opacity: 0.06, side: THREE.BackSide
+  });
+  globeScene.add(new THREE.Mesh(glowGeo, glowMat));
+
+  // ── Grid lines (lat/lon) ──
+  const gridMat = new THREE.LineBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.12 });
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const pts = [];
+    for (let lon = -180; lon <= 180; lon += 5) pts.push(latLonToVec3(lat, lon, 2.51));
+    globeScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+  }
+  for (let lon = -150; lon <= 180; lon += 30) {
+    const pts = [];
+    for (let lat = -90; lat <= 90; lat += 5) pts.push(latLonToVec3(lat, lon, 2.51));
+    globeScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+  }
+
+  // ── Lighting ──
+  globeScene.add(new THREE.AmbientLight(0x404060, 1.5));
+  const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  sunLight.position.set(5, 3, 5);
+  globeScene.add(sunLight);
+
+  // ── ISS marker ──
+  const issGeo = new THREE.SphereGeometry(0.06, 16, 16);
+  const issMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+  globeISS = new THREE.Mesh(issGeo, issMat);
+  globeScene.add(globeISS);
+
+  // ISS glow
+  const issGlowGeo = new THREE.SphereGeometry(0.12, 16, 16);
+  const issGlowMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.3 });
+  const issGlow = new THREE.Mesh(issGlowGeo, issGlowMat);
+  globeISS.add(issGlow);
+
+  // ── User location marker ──
+  addGlobeUserMarker();
+
+  // Rotate globe to face user's location initially
+  if (userLat !== null) {
+    globeScene.rotation.y = -((userLon + 180) * Math.PI / 180) - Math.PI/2;
+    globeScene.rotation.x = -(userLat * Math.PI / 180) * 0.3;
+  }
+
+  // ── Orbital path ring ──
+  const orbitMat = new THREE.LineBasicMaterial({ color: 0x0088cc, transparent: true, opacity: 0.4 });
+  const orbitPts = [];
+  for (let i = 0; i <= 100; i++) {
+    const t = (i/100) * Math.PI * 2;
+    // 51.6° inclination orbit
+    const lat = 51.6 * Math.sin(t);
+    const lon = (t * 180/Math.PI) - 180;
+    orbitPts.push(latLonToVec3(lat, lon, 2.52));
+  }
+  globeOrbitLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(orbitPts), orbitMat);
+  globeScene.add(globeOrbitLine);
+
+  // ── Mouse drag rotation ──
+  let isDragging = false, prevX = 0, prevY = 0;
+  const AUTO_ROT = 0.0008;
+  let resumeTimer = null;
+  let dragVelY = 0; // momentum from last drag
+
+  container.addEventListener('mousedown', e => {
+    isDragging = true;
+    prevX = e.clientX; prevY = e.clientY;
+    container.style.cursor = 'grabbing';
+    if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
+  });
+  window.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    container.style.cursor = 'grab';
+    // Resume auto-rotation after a short pause
+    resumeTimer = setTimeout(() => { dragVelY = 0; }, 1500);
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.clientX - prevX, dy = e.clientY - prevY;
+    globeScene.rotation.y += dx * 0.005;
+    globeScene.rotation.x += dy * 0.005;
+    globeScene.rotation.x = Math.max(-1.2, Math.min(1.2, globeScene.rotation.x));
+    dragVelY = dx * 0.005; // remember velocity for momentum
+    prevX = e.clientX; prevY = e.clientY;
+  });
+  container.style.cursor = 'grab';
+
+  // ── Animation loop ──
+  function animate() {
+    globeAnimFrame = requestAnimationFrame(animate);
+    if (!isDragging) {
+      if (Math.abs(dragVelY) > 0.0002) {
+        // Momentum — gradually decay drag velocity
+        globeScene.rotation.y += dragVelY;
+        dragVelY *= 0.95;
+      } else {
+        // Resume gentle auto-rotation
+        globeScene.rotation.y += AUTO_ROT;
+        dragVelY = 0;
+      }
+    }
+    globeRenderer.render(globeScene, globeCamera);
+  }
+  animate();
+
+  window.addEventListener('resize', onGlobeResize);
+  globeInitialized = true;
+
+  // Position ISS at current location
+  const latest = issTrack.length ? issTrack[issTrack.length-1] : null;
+  if (latest) updateGlobeISS(latest.lat, latest.lon);
+}
+
+function onGlobeResize() {
+  if (!globeRenderer || currentMapView !== '3d') return;
+  const container = document.getElementById('globe-container');
+  const W = container.clientWidth, H = container.clientHeight || 420;
+  globeRenderer.setSize(W, H);
+  globeCamera.aspect = W / H;
+  globeCamera.updateProjectionMatrix();
+}
+
+function updateGlobeISS(lat, lon) {
+  if (!globeISS) return;
+  const pos = latLonToVec3(lat, lon, 2.6);
+  globeISS.position.copy(pos);
+}
+
+// ── EONET NATURAL EVENTS ────────────────────────────────
+let eonetEvents  = [];
+let eonetVisible = false;
+
+// Category styling
+const EONET_CATS = {
+  wildfires:    { color:'#ff4400', icon:'🔥', label:'WILDFIRE'      },
+  severeStorms: { color:'#8855ff', icon:'🌀', label:'STORM'         },
+  volcanoes:    { color:'#ff00aa', icon:'🌋', label:'VOLCANO'       },
+  earthquakes:  { color:'#ffdd00', icon:'⚡', label:'EARTHQUAKE'    },
+  floods:       { color:'#0088ff', icon:'💧', label:'FLOOD'         },
+  landslides:   { color:'#886644', icon:'⛰', label:'LANDSLIDE'     },
+  dustHaze:     { color:'#ccaa44', icon:'💨', label:'DUST/HAZE'     },
+  seaLakeIce:   { color:'#88ddff', icon:'🧊', label:'SEA ICE'       },
+  snow:         { color:'#aaddff', icon:'❄',  label:'SNOW'          },
+  waterColor:   { color:'#00aacc', icon:'🌊', label:'WATER COLOR'   },
+  manmade:      { color:'#ff2255', icon:'⚠',  label:'MANMADE'       },
+};
+
+function getCatStyle(categoryId) {
+  return EONET_CATS[categoryId] || { color:'#ffffff', icon:'●', label: categoryId.toUpperCase() };
+}
+
+async function fetchEONET() {
+  try {
+    const r = await fetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=200');
+    if (!r.ok) throw new Error('EONET ' + r.status);
+    const data = await r.json();
+    eonetEvents = (data.events || []).filter(e => {
+      // Only use events with a point geometry (easier to plot)
+      const geo = e.geometry?.[0];
+      return geo && geo.type === 'Point' && geo.coordinates?.length === 2;
+    });
+    sysLog(`EONET: ${eonetEvents.length} ACTIVE NATURAL EVENTS`, 'ok');
+    if (eonetVisible) redrawCurrentMap();
+  } catch(e) {
+    sysLog('EONET FETCH ERROR: ' + e.message, 'warn');
+  }
+}
+
+function toggleEONET(btn) {
+  eonetVisible = !eonetVisible;
+  btn.classList.toggle('active', eonetVisible);
+  if (eonetVisible && !eonetEvents.length) fetchEONET();
+  else redrawCurrentMap();
+}
+
+function redrawCurrentMap() {
+  const latest = issTrack.length ? issTrack[issTrack.length-1] : null;
+  if (currentMapView === '2d') drawMap(latest?.lat ?? null, latest?.lon ?? null);
+  else if (currentMapView === 'web') drawOrbitWeb(latest?.lat ?? null, latest?.lon ?? null);
+}
+
+function drawEONETEvents(ctx, W, H) {
+  if (!eonetVisible || !eonetEvents.length) return;
+
+  // Scale emoji size based on zoom/density
+  eonetPositions = []; // reset hit areas
+  eonetEvents.forEach(event => {
+    const geo  = event.geometry?.[0];
+    if (!geo || geo.type !== 'Point') return;
+    const [lon, lat] = geo.coordinates;
+    const cat   = event.categories?.[0]?.id || 'unknown';
+    const style = getCatStyle(cat);
+    const pt    = latLonToXY(lat, lon, W, H);
+    const isWildfire = cat === 'wildfires';
+
+    const fontSize = isWildfire ? 9 : 12;
+    ctx.font = `${fontSize}px serif`;
+    ctx.globalAlpha = isWildfire ? 0.85 : 1;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(style.icon, pt.x, pt.y);
+    ctx.globalAlpha = 1;
+
+    // Store position for hover detection
+    eonetPositions.push({ x: pt.x, y: pt.y, event, W, H });
+  });
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  initMapTooltip();
+}
+
+// Store rendered event positions for hover hit-testing
+let eonetPositions = []; // [{x, y, event, W, H}]
+
+function storeEONETPosition(pt, event, W, H) {
+  eonetPositions.push({ x: pt.x, y: pt.y, event, W, H });
+}
+
+// Attach hover listener to the canvas once
+function initMapTooltip() {
+  const canvas = document.getElementById('iss-map');
+  if (!canvas || canvas._tooltipInit) return;
+  canvas._tooltipInit = true;
+
+  canvas.addEventListener('mousemove', e => {
+    if (!eonetVisible || !eonetPositions.length) {
+      hideTooltip(); return;
+    }
+    const rect   = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mx = (e.clientX - rect.left)  * scaleX;
+    const my = (e.clientY - rect.top)   * scaleY;
+    const HIT = 14; // pixel radius for hit detection
+
+    let closest = null, minDist = HIT;
+    eonetPositions.forEach(p => {
+      const d = Math.sqrt((mx - p.x)**2 + (my - p.y)**2);
+      if (d < minDist) { minDist = d; closest = p; }
+    });
+
+    if (closest) {
+      showTooltip(e.clientX, e.clientY, closest.event, rect);
+    } else {
+      hideTooltip();
+    }
+  });
+
+  canvas.addEventListener('mouseleave', hideTooltip);
+}
+
+function showTooltip(clientX, clientY, event, canvasRect) {
+  const tt    = document.getElementById('map-tooltip');
+  const cat   = event.categories?.[0]?.id || 'unknown';
+  const style = getCatStyle(cat);
+  const date  = event.geometry?.[0]?.date
+    ? new Date(event.geometry[0].date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase()
+    : '—';
+  const coords = event.geometry?.[0]?.coordinates;
+  const coordStr = coords ? `${Math.abs(coords[1]).toFixed(2)}°${coords[1]>=0?'N':'S'} ${Math.abs(coords[0]).toFixed(2)}°${coords[0]>=0?'E':'W'}` : '';
+
+  document.getElementById('tt-icon').textContent  = style.icon;
+  document.getElementById('tt-title').textContent = event.title || '—';
+  document.getElementById('tt-cat').textContent   = style.label;
+  document.getElementById('tt-date').textContent  = `${date}${coordStr ? ' · ' + coordStr : ''}`;
+
+  // Position tooltip near cursor but keep it inside the panel
+  const offsetX = 14, offsetY = -10;
+  let left = clientX - canvasRect.left + offsetX;
+  let top  = clientY - canvasRect.top  + offsetY;
+  if (left + 230 > canvasRect.width)  left = clientX - canvasRect.left - 230;
+  if (top  + 90  > canvasRect.height) top  = clientY - canvasRect.top  - 90;
+
+  tt.style.left    = left + 'px';
+  tt.style.top     = top  + 'px';
+  tt.style.display = 'block';
+}
+
+function hideTooltip() {
+  const tt = document.getElementById('map-tooltip');
+  if (tt) tt.style.display = 'none';
+}
+
+// Add EONET legend to map
+function updateMapLegend() {
+  const legend = document.getElementById('map-legend');
+  if (!legend) return;
+
+  const cats = {};
+  eonetEvents.forEach(e => {
+    const cat = e.categories?.[0]?.id;
+    if (cat) cats[cat] = (cats[cat]||0) + 1;
+  });
+
+  let eonetLegend = '';
+  if (eonetVisible && Object.keys(cats).length) {
+    eonetLegend = Object.entries(cats).map(([cat, count]) => {
+      const s = getCatStyle(cat);
+      return `<span>${s.icon} ${s.label} (${count})</span>`;
+    }).join('');
+  }
+
+  legend.innerHTML = `
+    <span><span style="color:var(--green)">●</span> ISS</span>
+    <span><span style="color:var(--accent)">●</span> YOU</span>
+    <span style="color:var(--dim)">○ FOOTPRINT (~2200KM)</span>
+    ${eonetLegend}`;
+  legend.style.flexWrap = 'wrap';
+  legend.style.maxWidth = '80%';
+}
+// ── BOOT ──────────────────────────────────
+sysLog('COSMOS CONTROL INITIALIZING...','info');
+sysLog('ESTABLISHING API CONNECTIONS...','info');
+
+const _statusMap = {};
+function setStatus(dotId, lblId, ok, text) {
+  const dot = document.getElementById(dotId);
+  const lbl = document.getElementById(lblId);
+  if (dot) dot.style.background = ok ? 'var(--green)' : ok === null ? 'var(--amber)' : 'var(--red)';
+  if (lbl) lbl.textContent = text;
+  _statusMap[dotId] = ok;
+  // Update masthead summary line
+  const line = document.getElementById('sys-status-line');
+  if (!line) return;
+  // Only critical feeds (ISS + weather) trigger DEGRADED — launches being cached/rate-limited is normal
+  const critical = ['dot-iss', 'dot-wx'].map(k => _statusMap[k]);
+  const allOk    = Object.values(_statusMap).every(v => v === true);
+  const critBad  = critical.some(v => v === false);
+  const anyAmber = Object.values(_statusMap).some(v => v === null);
+  line.textContent = allOk    ? 'ALL SYSTEMS NOMINAL · UTC SYNCHRONIZED' :
+                     critBad  ? 'DEGRADED — CHECK SYSTEM LOG · UTC SYNCHRONIZED' :
+                                'NOMINAL · SOME DATA CACHED · UTC SYNCHRONIZED';
+  line.style.color = allOk ? '' : critBad ? 'var(--red)' : 'var(--amber)';
+}
+initMap();
+fetchCrew(); fetchLaunches(); fetchNEO(); fetchPlanets(); fetchEarthPhotos();
+updateGravityCalc();
+fetchISS().then(() => {
+  renderPassPlaceholder(null, true);
+  setTimeout(requestLocation, 800);
+});
+fetchAurora();
+fetchEONET();
+calcMoonPhase();
+fetchFlares();
+calcVoyager();
+renderDebris();
+calcSkyEvents();
+setInterval(fetchISS, 10000);
+setInterval(()=>{ fetchNEO(); fetchLaunches(); }, 180000);
+setInterval(fetchFlares, 300000);
+setInterval(calcMoonPhase, 3600000);
+setInterval(fetchAurora, 600000);
+setInterval(fetchEONET, 600000); // refresh aurora every 10 min
+setInterval(()=>{ if(userLat!==null) fetchPassPredictions(); }, 1800000);
+</script>
+</body>
+</html>
