@@ -1440,6 +1440,18 @@ const TLE_SOURCES = [
   { name: 'WHERETHEISS.AT',  fn: fetchTleFromWtia },
 ];
 
+// Last-resort TLE baked into the page itself. Some networks (certain mobile carriers,
+// DNS-level ad/content blockers, corporate firewalls) block one or both live TLE hosts
+// outright, which otherwise leaves a first-time visitor on that network with zero data —
+// there's no localStorage cache yet to fall back to either. This keeps the orbit
+// propagation usable (position drifts a bit more each week as this goes stale) instead of
+// failing completely. Epoch below: 2026-08-01 — refresh occasionally.
+const FALLBACK_TLE = {
+  line1: '1 25544U 98067A   26213.79682580  .00007322  00000+0  13941-3 0  9993',
+  line2: '2 25544  51.6314  74.3802 0007140   2.2740 357.8280 15.49304641578823',
+  epoch: '2026-08-01',
+};
+
 async function fetchTLE() {
   for (const src of TLE_SOURCES) {
     try {
@@ -1468,6 +1480,19 @@ async function fetchTLE() {
       }
     } catch(e2) {}
   }
+
+  // Still nothing (no cache either — e.g. first visit on a network that blocks both live
+  // TLE hosts). Use the built-in fallback so the app still shows *something* rather than
+  // a dead panel.
+  if (!issSatrec) {
+    try {
+      issTLE = { line1: FALLBACK_TLE.line1, line2: FALLBACK_TLE.line2 };
+      issSatrec = satellite.twoline2satrec(FALLBACK_TLE.line1, FALLBACK_TLE.line2);
+      sysLog(`TLE SOURCES UNREACHABLE — USING BUILT-IN FALLBACK (EPOCH ${FALLBACK_TLE.epoch}, MAY BE STALE)`, 'warn');
+      return true;
+    } catch(e3) {}
+  }
+
   if (!tleFailureLogged) {
     sysLog('TLE FETCH ERROR: all sources unreachable', 'warn');
     tleFailureLogged = true;
