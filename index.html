@@ -219,6 +219,21 @@ a.ptitle:hover{text-decoration:underline;}
   margin-top: 3px;
 }
 
+/* AR SPOT */
+.ar-overlay{display:none;position:fixed;inset:0;z-index:3000;background:#000;overflow:hidden;}
+.ar-overlay.visible{display:block;}
+#ar-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;}
+#ar-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.ar-close{position:absolute;top:16px;right:16px;z-index:10;background:rgba(2,8,16,0.75);border:1px solid var(--accent2);color:var(--text);font-family:var(--mono);font-size:0.55rem;letter-spacing:0.1em;padding:8px 14px;cursor:pointer;}
+.ar-close:hover{border-color:var(--accent);color:var(--accent);}
+.ar-status{display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;font-family:var(--mono);font-size:0.6rem;color:var(--text);letter-spacing:0.1em;text-align:center;line-height:1.8;padding:16px 22px;background:rgba(2,8,16,0.8);border:1px solid var(--border2);max-width:280px;}
+.ar-status.visible{display:block;}
+.ar-status.err{color:var(--red);border-color:var(--red);}
+.ar-readout{position:absolute;bottom:0;left:0;right:0;z-index:10;background:linear-gradient(to top,rgba(2,8,16,0.92),transparent);padding:28px 16px 16px;font-family:var(--mono);}
+.ar-readout-row{display:flex;justify-content:space-between;padding:3px 0;font-size:0.55rem;letter-spacing:0.08em;color:var(--dim);border-bottom:1px solid rgba(10,32,64,0.4);}
+.ar-readout-row span:last-child{color:var(--textbr);font-weight:600;}
+.ar-readout-row:last-child{border-bottom:none;}
+
 /* ── RESPONSIVE / MOBILE ── */
 @media (max-width: 900px) {
   .orb-toprow { grid-template-columns: 1fr !important; margin-bottom: 0 !important; }
@@ -258,6 +273,19 @@ a.ptitle:hover{text-decoration:underline;}
   <button class="alert-close" onclick="document.getElementById('pass-alert').classList.remove('visible')">✕</button>
   <div class="alert-title">🛰 ISS VISIBLE PASS IMMINENT</div>
   <div class="alert-body" id="alert-body">LOADING...</div>
+</div>
+
+<div class="ar-overlay" id="ar-overlay">
+  <video id="ar-video" autoplay playsinline muted></video>
+  <canvas id="ar-canvas"></canvas>
+  <button class="ar-close" onclick="closeARSpot()">✕ CLOSE</button>
+  <div class="ar-status" id="ar-status">INITIALIZING AR SPOT...</div>
+  <div class="ar-readout" id="ar-readout" style="display:none;">
+    <div class="ar-readout-row"><span>ISS AZIMUTH</span><span id="ar-az">—</span></div>
+    <div class="ar-readout-row"><span>ISS ELEVATION</span><span id="ar-el">—</span></div>
+    <div class="ar-readout-row"><span>RANGE</span><span id="ar-range">—</span></div>
+    <div class="ar-readout-row"><span>VISIBILITY</span><span id="ar-vis">—</span></div>
+  </div>
 </div>
 
 <div class="wrap">
@@ -308,6 +336,7 @@ a.ptitle:hover{text-decoration:underline;}
               <button class="map-view-btn" id="btn-view-3d" onclick="setMapView('3d')">3D GLOBE</button>
               <div style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></div>
               <button class="map-view-btn" id="btn-eonet" onclick="toggleEONET(this)" title="Show natural events">🌍 EVENTS</button>
+              <button class="map-view-btn" id="btn-ar-spot" onclick="openARSpot()" title="Point your camera at the sky to find the ISS">📷 AR SPOT</button>
             </div>
           </div>
         </div>
@@ -1659,6 +1688,190 @@ function requestLocation() {
     },
     { timeout:10000, maximumAge:300000 }
   );
+}
+
+// ── AR SPOT — point the camera at the sky, overlay shows where the ISS actually is ──
+// Reuses the same look-angle math as pass prediction (getLookAngles) plus the device's
+// compass/tilt sensors to work out where the ISS sits relative to wherever the phone is
+// currently pointed. Heading accuracy depends entirely on the device's magnetometer —
+// there's no way to calibrate that from here, so the reticle can be off by a fair bit,
+// especially on Android or near magnetic interference (metal, electronics).
+let arStream = null, arActive = false, arRenderHandle = null;
+let arHeading = null, arBeta = null;
+const AR_FOV_H = 62, AR_FOV_V = 48; // approximate rear-camera field of view in degrees — not device-calibrated
+
+function setARStatus(msg, isErr) {
+  const el = document.getElementById('ar-status');
+  if (!msg) { el.classList.remove('visible', 'err'); return; }
+  el.textContent = msg;
+  el.classList.add('visible');
+  el.classList.toggle('err', !!isErr);
+}
+
+function handleOrientation(e) {
+  // iOS Safari exposes a ready-made true-north compass heading directly on the event.
+  if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
+    arHeading = e.webkitCompassHeading;
+  } else if (typeof e.alpha === 'number') {
+    // Android (and any browser reporting an absolute/earth-referenced frame) — alpha is
+    // measured counter-clockwise from north, so flip it to a clockwise compass heading.
+    // Falls back to using relative alpha if no absolute frame is available, which drifts
+    // from true north but still lets the reticle track the phone's own rotation.
+    arHeading = (360 - e.alpha) % 360;
+  }
+  if (typeof e.beta === 'number') arBeta = e.beta;
+}
+
+async function openARSpot() {
+  const overlay  = document.getElementById('ar-overlay');
+  const readout  = document.getElementById('ar-readout');
+  overlay.classList.add('visible');
+  readout.style.display = 'none';
+  setARStatus('REQUESTING CAMERA & SENSOR ACCESS...');
+
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Camera access needs HTTPS (or localhost) and a supported browser.');
+    }
+    if (!window.DeviceOrientationEvent) {
+      throw new Error('This device has no compass/orientation sensor to aim with.');
+    }
+
+    // iOS 13+ gates motion/orientation sensors behind an explicit user-gesture prompt.
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      const res = await DeviceOrientationEvent.requestPermission();
+      if (res !== 'granted') throw new Error('Motion & orientation access denied — enable it in Settings to use AR Spot.');
+    }
+    arHeading = null; arBeta = null;
+    window.addEventListener('deviceorientation', handleOrientation);
+
+    // Reuse the location we already have (e.g. from pass predictions) or ask fresh.
+    if (userLat === null || userLon === null) {
+      setARStatus('WAITING FOR LOCATION PERMISSION...');
+      await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          pos => { userLat = pos.coords.latitude; userLon = pos.coords.longitude; appendLocationRow(); resolve(); },
+          () => reject(new Error('Location access denied — AR Spot needs your position to aim.')),
+          { timeout: 10000, maximumAge: 300000 }
+        );
+      });
+    }
+
+    if (!issSatrec) throw new Error('ISS orbital data not loaded yet — try again in a few seconds.');
+
+    setARStatus('REQUESTING CAMERA...');
+    arStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    const video = document.getElementById('ar-video');
+    video.srcObject = arStream;
+    await video.play().catch(() => {});
+
+    setARStatus(null);
+    readout.style.display = 'block';
+    arActive = true;
+    arTick();
+  } catch (e) {
+    setARStatus('⚠ ' + e.message, true);
+    sysLog('AR SPOT: ' + e.message, 'warn');
+  }
+}
+
+function closeARSpot() {
+  arActive = false;
+  if (arRenderHandle) cancelAnimationFrame(arRenderHandle);
+  arRenderHandle = null;
+  window.removeEventListener('deviceorientation', handleOrientation);
+  if (arStream) { arStream.getTracks().forEach(t => t.stop()); arStream = null; }
+  document.getElementById('ar-video').srcObject = null;
+  document.getElementById('ar-overlay').classList.remove('visible');
+}
+window.addEventListener('pagehide', closeARSpot);
+
+function arTick() {
+  if (!arActive) return;
+  arRenderHandle = requestAnimationFrame(arTick);
+  drawARFrame();
+}
+
+function drawARFrame() {
+  const canvas = document.getElementById('ar-canvas');
+  const video  = document.getElementById('ar-video');
+  const w = video.clientWidth, h = video.clientHeight;
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, w, h);
+
+  if (arHeading === null || arBeta === null) {
+    document.getElementById('ar-vis').textContent = 'WAITING FOR COMPASS...';
+    return;
+  }
+
+  const now  = new Date();
+  const look = getLookAngles(issSatrec, userLat, userLon, 0, now);
+  if (!look) return;
+
+  const deviceElevation = arBeta - 90; // phone held upright, camera pointed forward ≈ beta 90 at the horizon
+  let dAz = ((look.azimuth - arHeading + 540) % 360) - 180; // normalized to [-180, 180]
+  const dEl = look.elevation - deviceElevation;
+
+  document.getElementById('ar-az').textContent    = look.azimuth.toFixed(1) + '° ' + azToCompass(look.azimuth);
+  document.getElementById('ar-el').textContent    = look.elevation.toFixed(1) + '°';
+  document.getElementById('ar-range').textContent = Math.round(look.range) + ' KM';
+  document.getElementById('ar-vis').textContent   =
+    look.elevation < 0 ? 'BELOW YOUR HORIZON' :
+    isSatelliteSunlit(issSatrec, now) ? 'SUNLIT — LOOK FOR A BRIGHT, STEADY, MOVING DOT' : 'IN EARTH’S SHADOW — NOT VISIBLE';
+
+  if (Math.abs(dAz) <= AR_FOV_H/2 && Math.abs(dEl) <= AR_FOV_V/2) {
+    const x = w/2 + (dAz / (AR_FOV_H/2)) * (w/2);
+    const y = h/2 - (dEl / (AR_FOV_V/2)) * (h/2);
+    drawReticle(ctx, x, y);
+  } else {
+    drawOffscreenArrow(ctx, w, h, dAz, dEl);
+  }
+}
+
+function drawReticle(ctx, x, y) {
+  ctx.save();
+  const glow = ctx.createRadialGradient(x, y, 0, x, y, 30);
+  glow.addColorStop(0, 'rgba(0,255,136,0.35)');
+  glow.addColorStop(1, 'rgba(0,255,136,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI*2); ctx.fill();
+
+  ctx.strokeStyle = '#00ff88';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x-24,y); ctx.lineTo(x-8,y); ctx.moveTo(x+8,y); ctx.lineTo(x+24,y);
+  ctx.moveTo(x,y-24); ctx.lineTo(x,y-8); ctx.moveTo(x,y+8); ctx.lineTo(x,y+24);
+  ctx.stroke();
+
+  ctx.font = 'bold 13px Share Tech Mono, monospace';
+  ctx.fillStyle = '#00ff88';
+  ctx.textAlign = 'center';
+  ctx.fillText('ISS', x, y - 34);
+  ctx.restore();
+}
+
+function drawOffscreenArrow(ctx, w, h, dAz, dEl) {
+  const cx = w/2, cy = h/2;
+  const angle = Math.atan2(-dEl, dAz); // screen-space: up = positive elevation
+  const r = Math.min(w, h) * 0.38;
+  const x = cx + Math.cos(angle) * r;
+  const y = cy + Math.sin(angle) * r;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.fillStyle = 'rgba(0,255,136,0.85)';
+  ctx.beginPath();
+  ctx.moveTo(16, 0); ctx.lineTo(-10, -10); ctx.lineTo(-10, 10); ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  ctx.font = 'bold 11px Share Tech Mono, monospace';
+  ctx.fillStyle = '#00ff88';
+  ctx.textAlign = 'center';
+  ctx.fillText('TURN ' + Math.round(Math.hypot(dAz, dEl)) + '°', x, y + (Math.sin(angle) >= 0 ? 22 : -14));
 }
 
 function getPassSection() {
