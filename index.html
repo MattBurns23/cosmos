@@ -2501,6 +2501,32 @@ function initGlobe() {
     prevX = e.clientX; prevY = e.clientY;
   });
   container.style.cursor = 'grab';
+  container.style.touchAction = 'none';
+
+  container.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    isDragging = true;
+    prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
+    if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
+  }, { passive: true });
+  container.addEventListener('touchmove', e => {
+    if (!isDragging || !e.touches.length) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const dx = t.clientX - prevX, dy = t.clientY - prevY;
+    globeScene.rotation.y += dx * 0.005;
+    globeScene.rotation.x += dy * 0.005;
+    globeScene.rotation.x = Math.max(-1.2, Math.min(1.2, globeScene.rotation.x));
+    dragVelY = dx * 0.005;
+    prevX = t.clientX; prevY = t.clientY;
+  }, { passive: false });
+  const endGlobeTouch = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    resumeTimer = setTimeout(() => { dragVelY = 0; }, 1500);
+  };
+  container.addEventListener('touchend', endGlobeTouch);
+  container.addEventListener('touchcancel', endGlobeTouch);
 
   // ── Animation loop ──
   function animate() {
