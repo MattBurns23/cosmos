@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COSMOS // MISSION CONTROL</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#020408">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cosmos">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;900&family=Rajdhani:wght@300;400;600&display=swap');
 :root{--void:#020408;--deep:#040c14;--panel:#060e18;--border:#0a2040;--border2:#0d3060;--accent:#00d4ff;--accent2:#0088cc;--green:#00ff88;--green2:#00cc6a;--amber:#ffaa00;--red:#ff3333;--dim:#6a94b8;--text:#a0c8e0;--textbr:#c8e4f0;--white:#e8f4fc;--ltblue:#7ec8ff;--mono:'Share Tech Mono',monospace;--display:'Orbitron',monospace;--body:'Rajdhani',sans-serif;}
@@ -3079,6 +3087,10 @@ setInterval(calcMoonPhase, 3600000);
 setInterval(fetchAurora, 600000);
 setInterval(fetchEONET, 600000); // refresh aurora every 10 min
 setInterval(()=>{ if(userLat!==null) fetchPassPredictions(); }, 1800000);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 </script>
 </body>
 </html>
